@@ -281,10 +281,14 @@ function sattReglage(id, out, varde) {
   $(out).textContent = out === "oGrannar" ? String(el.value) : meter(Number(el.value));
 }
 
-async function laddaConfig() {
-  const res = await fetch(`${API}/contents/config.json?ref=main`, { headers: hdrs() });
+async function hamtaConfigFil() {
+  const res = await fetch(`${API}/contents/config.json?ref=main`, { headers: hdrs(), cache: "no-store" });
   if (!res.ok) throw new Error(`GitHub svarade ${res.status}`);
-  const data = await res.json();
+  return res.json();
+}
+
+async function laddaConfig() {
+  const data = await hamtaConfigFil();
   configSha = data.sha;
   const cfg = JSON.parse(b64decode(data.content));
   const k = cfg.kriterier;
@@ -312,10 +316,6 @@ async function sparaConfig() {
   const btn = $("saveBtn"), st = $("saveStatus");
   btn.disabled = true; st.textContent = "Sparar …"; st.className = "status";
   try {
-    const gammalSha = configSha;
-    const res0 = await fetch(`${API}/contents/config.json?ref=main`, { headers: hdrs() });
-    if (res0.ok) configSha = (await res0.json()).sha;
-
     const typer = [...$("fTyper").querySelectorAll("input:checked")].map(b => b.value);
     if (typer.length === 0) throw new Error("välj minst en hustyp");
     const tal = (id) => $(id).value.trim() === "" ? null : Number($(id).value);
@@ -339,20 +339,28 @@ async function sparaConfig() {
     };
     if (cfg.searches.length === 0) throw new Error("ange minst ett sökområde");
 
-    const res = await fetch(`${API}/contents/config.json`, {
-      method: "PUT", headers: hdrs(),
-      body: JSON.stringify({
-        message: "Ändra inställningar via kontrollpanelen",
-        content: b64encode(JSON.stringify(cfg, null, 2) + "\n"),
-        sha: configSha ?? gammalSha, branch: "main",
-      }),
-    });
-    if (!res.ok) throw new Error(`GitHub svarade ${res.status}`);
-    configSha = (await res.json()).content.sha;
+    await skrivConfig(cfg);
     st.textContent = "Sparat. Nästa körning använder de nya kriterierna."; st.className = "status ok";
   } catch (e) {
     st.textContent = "Kunde inte spara: " + e.message; st.className = "status err";
   } finally { btn.disabled = false; }
+}
+
+// Skriver config.json med färskt versions-id; vid 409 (någon annan hann
+// committa emellan) hämtas nytt id och skrivningen görs om en gång.
+async function skrivConfig(cfg, forsokKvar = 1) {
+  configSha = (await hamtaConfigFil()).sha;
+  const res = await fetch(`${API}/contents/config.json`, {
+    method: "PUT", headers: hdrs(),
+    body: JSON.stringify({
+      message: "Ändra inställningar via kontrollpanelen",
+      content: b64encode(JSON.stringify(cfg, null, 2) + "\n"),
+      sha: configSha, branch: "main",
+    }),
+  });
+  if (res.status === 409 && forsokKvar > 0) return skrivConfig(cfg, forsokKvar - 1);
+  if (!res.ok) throw new Error(`GitHub svarade ${res.status}`);
+  configSha = (await res.json()).content.sha;
 }
 
 async function korWorkflow(fil, knappId, text) {
@@ -380,7 +388,7 @@ function relTid(iso) {
 
 async function laddaKorningar() {
   try {
-    const res = await fetch(`${API}/actions/runs?per_page=8`, { headers: hdrs() });
+    const res = await fetch(`${API}/actions/runs?per_page=8`, { headers: hdrs(), cache: "no-store" });
     if (!res.ok) return;
     const data = await res.json();
     const farg = (r) => r.status !== "completed" ? "var(--warn)" : r.conclusion === "success" ? "var(--ok)" : "var(--err)";
