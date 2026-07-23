@@ -1,0 +1,305 @@
+<!DOCTYPE html>
+<html lang="sv">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Bostadsvakt – kontrollpanel</title>
+<link rel="icon" href="data:image/svg+xml,<svg xmlns=%22http://www.w3.org/2000/svg%22 viewBox=%220 0 100 100%22><text y=%22.9em%22 font-size=%2290%22>🏡</text></svg>">
+<style>
+  :root {
+    --bg: #0f1420; --card: #1a2232; --card2: #202a3e; --text: #e8ecf4;
+    --muted: #93a0b8; --line: #2c3850; --accent: #5b9dff; --accent2: #3f7ee0;
+    --ok: #4cc38a; --warn: #f0b429; --err: #ef6a6a; --radius: 14px;
+  }
+  @media (prefers-color-scheme: light) {
+    :root { --bg:#f2f5fa; --card:#ffffff; --card2:#eef2f8; --text:#1c2333;
+      --muted:#5b6880; --line:#dde4ef; }
+  }
+  * { box-sizing: border-box; margin: 0; }
+  body { background: var(--bg); color: var(--text);
+    font: 16px/1.5 system-ui, -apple-system, "Segoe UI", sans-serif;
+    min-height: 100vh; padding: 24px 16px 60px; }
+  .wrap { max-width: 760px; margin: 0 auto; }
+  header { display:flex; align-items:center; justify-content:space-between; gap:12px; margin-bottom:20px; flex-wrap:wrap; }
+  h1 { font-size: 1.5rem; }
+  h1 small { display:block; font-size:.85rem; color:var(--muted); font-weight:400; }
+  .card { background: var(--card); border:1px solid var(--line); border-radius: var(--radius);
+    padding: 20px; margin-bottom: 16px; }
+  .card h2 { font-size: 1.05rem; margin-bottom: 14px; display:flex; align-items:center; gap:8px; }
+  label { display:block; font-size:.85rem; color:var(--muted); margin-bottom:4px; }
+  input[type=text], input[type=number], input[type=password] {
+    width:100%; padding:10px 12px; border-radius:10px; border:1px solid var(--line);
+    background:var(--card2); color:var(--text); font-size:1rem; }
+  input:focus { outline:2px solid var(--accent); outline-offset:1px; border-color:transparent; }
+  .grid { display:grid; grid-template-columns:1fr 1fr; gap:14px; }
+  .grid .full { grid-column: 1 / -1; }
+  @media (max-width:560px){ .grid { grid-template-columns:1fr; } }
+  .range-row { display:flex; align-items:center; gap:12px; }
+  .range-row input[type=range]{ flex:1; accent-color: var(--accent); }
+  .range-row output { min-width:86px; text-align:right; font-variant-numeric:tabular-nums; font-size:.95rem; }
+  .switch { display:flex; align-items:center; justify-content:space-between; gap:10px;
+    background:var(--card2); border:1px solid var(--line); border-radius:10px; padding:10px 12px; }
+  .switch span { font-size:.92rem; }
+  .switch input { width:42px; height:24px; accent-color:var(--accent); }
+  button { border:0; border-radius:10px; padding:11px 18px; font-size:.95rem; font-weight:600;
+    cursor:pointer; background:var(--accent); color:#fff; transition:filter .15s; }
+  button:hover { filter:brightness(1.12); }
+  button.ghost { background:var(--card2); color:var(--text); border:1px solid var(--line); }
+  button:disabled { opacity:.5; cursor:wait; }
+  .row { display:flex; gap:10px; flex-wrap:wrap; margin-top:6px; }
+  .status { font-size:.88rem; margin-top:10px; min-height:1.3em; }
+  .status.ok { color:var(--ok); } .status.err { color:var(--err); }
+  .runs { list-style:none; display:flex; flex-direction:column; gap:8px; }
+  .runs li { display:flex; align-items:center; gap:10px; background:var(--card2);
+    border:1px solid var(--line); border-radius:10px; padding:9px 12px; font-size:.9rem; }
+  .runs .dot { width:10px; height:10px; border-radius:50%; flex-shrink:0; }
+  .runs .t { color:var(--muted); margin-left:auto; white-space:nowrap; font-size:.8rem; }
+  .runs a { color:var(--text); text-decoration:none; }
+  .runs a:hover { text-decoration:underline; color:var(--accent); }
+  .hint { font-size:.83rem; color:var(--muted); margin-top:10px; }
+  .hint a { color:var(--accent); }
+  #loginView .card { max-width:520px; margin:8vh auto 0; }
+  .hidden { display:none !important; }
+  .pill { font-size:.78rem; background:var(--card2); border:1px solid var(--line);
+    padding:3px 10px; border-radius:99px; color:var(--muted); }
+  ol.steps { margin:10px 0 0 18px; font-size:.85rem; color:var(--muted); }
+  ol.steps li { margin-bottom:4px; }
+</style>
+</head>
+<body>
+<div class="wrap">
+
+  <!-- ===== Inloggning ===== -->
+  <div id="loginView">
+    <div class="card">
+      <h2>🏡 Bostadsvakt – kontrollpanel</h2>
+      <p class="hint" style="margin:0 0 14px">Panelen pratar direkt med ditt privata GitHub-repo. Klistra in en personlig åtkomsttoken – den sparas <strong>bara i din webbläsare</strong>.</p>
+      <label for="tokenInput">GitHub-token</label>
+      <input type="password" id="tokenInput" placeholder="github_pat_…" autocomplete="off">
+      <div class="row"><button id="loginBtn">Logga in</button></div>
+      <div class="status" id="loginStatus"></div>
+      <details style="margin-top:14px">
+        <summary style="cursor:pointer;font-size:.88rem;color:var(--accent)">Hur skapar jag en token?</summary>
+        <ol class="steps">
+          <li>GitHub → din profilbild → <strong>Settings</strong> → <strong>Developer settings</strong> → <strong>Personal access tokens → Fine-grained tokens</strong> → <em>Generate new token</em></li>
+          <li>Repository access: <strong>Only select repositories</strong> → välj <code>bostadsvakt</code></li>
+          <li>Permissions → Repository permissions: <strong>Contents: Read and write</strong> samt <strong>Actions: Read and write</strong></li>
+          <li>Generera, kopiera och klistra in här</li>
+        </ol>
+      </details>
+    </div>
+  </div>
+
+  <!-- ===== Panel ===== -->
+  <div id="panelView" class="hidden">
+    <header>
+      <h1>🏡 Bostadsvakt <small>Kontrollpanel för din husbevakning</small></h1>
+      <div class="row" style="margin:0">
+        <span class="pill" id="repoPill"></span>
+        <button class="ghost" id="logoutBtn" style="padding:6px 12px;font-size:.8rem">Logga ut</button>
+      </div>
+    </header>
+
+    <div class="card">
+      <h2>⚙️ Sökkriterier</h2>
+      <div class="grid">
+        <div class="full">
+          <label for="fOmraden">Sökområden (kommaseparerade)</label>
+          <input type="text" id="fOmraden" placeholder="Uppsala, Norrtälje">
+        </div>
+        <div>
+          <label for="fMaxPris">Maxpris (kr) – tomt = inget tak</label>
+          <input type="number" id="fMaxPris" min="0" step="100000" placeholder="t.ex. 5500000">
+        </div>
+        <div>
+          <label for="fGrannar">Max grannbyggnader inom 300 m</label>
+          <div class="range-row">
+            <input type="range" id="fGrannar" min="0" max="60" step="1">
+            <output id="oGrannar"></output>
+          </div>
+        </div>
+        <div>
+          <label for="fHallplats">Max avstånd till hållplats</label>
+          <div class="range-row">
+            <input type="range" id="fHallplats" min="100" max="3000" step="50">
+            <output id="oHallplats"></output>
+          </div>
+        </div>
+        <div>
+          <label for="fVatten">Max avstånd till vatten</label>
+          <div class="range-row">
+            <input type="range" id="fVatten" min="100" max="1500" step="50">
+            <output id="oVatten"></output>
+          </div>
+        </div>
+        <div>
+          <label for="fSkog">Max avstånd till skog</label>
+          <div class="range-row">
+            <input type="range" id="fSkog" min="100" max="1500" step="50">
+            <output id="oSkog"></output>
+          </div>
+        </div>
+        <div class="switch">
+          <span>Kräv vatten <em>eller</em> skog nära</span>
+          <input type="checkbox" id="fKravNatur">
+        </div>
+        <div class="switch full">
+          <span>Notiser endast för hus som uppfyller alla krav (🎯)</span>
+          <input type="checkbox" id="fEndastTraffar">
+        </div>
+      </div>
+      <div class="row" style="margin-top:16px">
+        <button id="saveBtn">💾 Spara inställningar</button>
+        <button class="ghost" id="reloadBtn">↻ Ladda om</button>
+      </div>
+      <div class="status" id="saveStatus"></div>
+    </div>
+
+    <div class="card">
+      <h2>▶️ Kör</h2>
+      <div class="row">
+        <button id="testBtn" class="ghost">📱 Skicka testnotis</button>
+        <button id="runBtn" class="ghost">🔍 Kör bevakningen nu</button>
+      </div>
+      <div class="status" id="runStatus"></div>
+    </div>
+
+    <div class="card">
+      <h2>🕒 Senaste körningar</h2>
+      <ul class="runs" id="runsList"><li>Laddar…</li></ul>
+      <p class="hint">Uppdateras var 30:e sekund. <a id="actionsLink" target="_blank" rel="noopener">Öppna Actions-fliken →</a></p>
+    </div>
+  </div>
+</div>
+
+<script>
+const OWNER = "mathiasmholm", REPO = "bostadsvakt";
+const API = `https://api.github.com/repos/${OWNER}/${REPO}`;
+let token = localStorage.getItem("bv_token") || "";
+let configSha = null;
+let runsTimer = null;
+
+const $ = (id) => document.getElementById(id);
+const hdrs = () => ({ Authorization: `Bearer ${token}`, Accept: "application/vnd.github+json" });
+
+const b64decode = (s) => new TextDecoder().decode(Uint8Array.from(atob(s.replace(/\n/g, "")), c => c.charCodeAt(0)));
+const b64encode = (s) => btoa(String.fromCharCode(...new TextEncoder().encode(s)));
+const meter = (n) => n >= 1000 ? (n / 1000).toLocaleString("sv-SE") + " km" : n + " m";
+
+// Reglage + utskrift
+for (const [range, out, fmt] of [["fHallplats","oHallplats",meter],["fVatten","oVatten",meter],["fSkog","oSkog",meter],["fGrannar","oGrannar",String]]) {
+  $(range).addEventListener("input", () => $(out).value = fmt(Number($(range).value)));
+}
+
+function visa(vy) {
+  $("loginView").classList.toggle("hidden", vy !== "login");
+  $("panelView").classList.toggle("hidden", vy !== "panel");
+}
+
+async function laddaConfig() {
+  const res = await fetch(`${API}/contents/config.json?ref=main`, { headers: hdrs() });
+  if (!res.ok) throw new Error(`GitHub svarade ${res.status}`);
+  const data = await res.json();
+  configSha = data.sha;
+  const cfg = JSON.parse(b64decode(data.content));
+  const k = cfg.kriterier;
+  $("fOmraden").value = cfg.searches.map(s => s.namn).join(", ");
+  $("fMaxPris").value = k.maxPris ?? "";
+  $("fHallplats").value = k["maxAvståndHållplatsM"]; $("oHallplats").value = meter(k["maxAvståndHållplatsM"]);
+  $("fVatten").value = k["maxAvståndVattenM"]; $("oVatten").value = meter(k["maxAvståndVattenM"]);
+  $("fSkog").value = k["maxAvståndSkogM"]; $("oSkog").value = meter(k["maxAvståndSkogM"]);
+  $("fGrannar").value = k["maxGrannarInom300m"]; $("oGrannar").value = String(k["maxGrannarInom300m"]);
+  $("fKravNatur").checked = k.kravVattenEllerSkog;
+  $("fEndastTraffar").checked = cfg.notiser["endastTräffar"];
+  return cfg;
+}
+
+async function sparaConfig() {
+  const btn = $("saveBtn"), st = $("saveStatus");
+  btn.disabled = true; st.textContent = "Sparar…"; st.className = "status";
+  try {
+    const cfg = await laddaConfig(); // färsk sha + bas att utgå från
+    cfg.searches = $("fOmraden").value.split(",").map(s => s.trim()).filter(Boolean).map(namn => ({ namn, q: namn }));
+    const k = cfg.kriterier;
+    k.maxPris = $("fMaxPris").value ? Number($("fMaxPris").value) : null;
+    k["maxAvståndHållplatsM"] = Number($("fHallplats").value);
+    k["maxAvståndVattenM"] = Number($("fVatten").value);
+    k["maxAvståndSkogM"] = Number($("fSkog").value);
+    k["maxGrannarInom300m"] = Number($("fGrannar").value);
+    k.kravVattenEllerSkog = $("fKravNatur").checked;
+    cfg.notiser["endastTräffar"] = $("fEndastTraffar").checked;
+    const res = await fetch(`${API}/contents/config.json`, {
+      method: "PUT", headers: hdrs(),
+      body: JSON.stringify({
+        message: "Ändra inställningar via kontrollpanelen",
+        content: b64encode(JSON.stringify(cfg, null, 2) + "\n"),
+        sha: configSha, branch: "main",
+      }),
+    });
+    if (!res.ok) throw new Error(`GitHub svarade ${res.status}`);
+    st.textContent = "✔ Sparat! Nästa körning använder de nya kriterierna."; st.className = "status ok";
+  } catch (e) {
+    st.textContent = "✘ Kunde inte spara: " + e.message; st.className = "status err";
+  } finally { btn.disabled = false; }
+}
+
+async function korWorkflow(fil, knapp, text) {
+  const btn = $(knapp), st = $("runStatus");
+  btn.disabled = true; st.textContent = "Startar…"; st.className = "status";
+  try {
+    const res = await fetch(`${API}/actions/workflows/${fil}/dispatches`, {
+      method: "POST", headers: hdrs(), body: JSON.stringify({ ref: "main" }),
+    });
+    if (res.status !== 204) throw new Error(`GitHub svarade ${res.status}`);
+    st.textContent = `✔ ${text}`; st.className = "status ok";
+    setTimeout(laddaKorningar, 4000);
+  } catch (e) {
+    st.textContent = "✘ Gick inte att starta: " + e.message; st.className = "status err";
+  } finally { btn.disabled = false; }
+}
+
+async function laddaKorningar() {
+  try {
+    const res = await fetch(`${API}/actions/runs?per_page=8`, { headers: hdrs() });
+    if (!res.ok) return;
+    const data = await res.json();
+    const farg = (r) => r.status !== "completed" ? "var(--warn)" : r.conclusion === "success" ? "var(--ok)" : "var(--err)";
+    $("runsList").innerHTML = (data.workflow_runs ?? []).map(r => `
+      <li><span class="dot" style="background:${farg(r)}"></span>
+        <a href="${r.html_url}" target="_blank" rel="noopener">${r.name}</a>
+        <span class="t">${new Date(r.created_at).toLocaleString("sv-SE", { day:"numeric", month:"short", hour:"2-digit", minute:"2-digit" })}</span>
+      </li>`).join("") || "<li>Inga körningar ännu.</li>";
+  } catch { /* nätverksfel – behåll gamla listan */ }
+}
+
+async function loggaIn() {
+  const st = $("loginStatus");
+  st.textContent = "Kontrollerar…"; st.className = "status";
+  try {
+    await laddaConfig();
+    localStorage.setItem("bv_token", token);
+    $("repoPill").textContent = `${OWNER}/${REPO}`;
+    $("actionsLink").href = `https://github.com/${OWNER}/${REPO}/actions`;
+    visa("panel");
+    laddaKorningar();
+    clearInterval(runsTimer);
+    runsTimer = setInterval(laddaKorningar, 30000);
+  } catch (e) {
+    st.textContent = "✘ Token funkar inte: " + e.message + " – kontrollera behörigheterna (Contents + Actions, read/write).";
+    st.className = "status err";
+    visa("login");
+  }
+}
+
+$("loginBtn").addEventListener("click", () => { token = $("tokenInput").value.trim(); if (token) loggaIn(); });
+$("tokenInput").addEventListener("keydown", (e) => { if (e.key === "Enter") $("loginBtn").click(); });
+$("logoutBtn").addEventListener("click", () => { localStorage.removeItem("bv_token"); token = ""; clearInterval(runsTimer); $("tokenInput").value = ""; visa("login"); });
+$("saveBtn").addEventListener("click", sparaConfig);
+$("reloadBtn").addEventListener("click", async () => { await laddaConfig(); $("saveStatus").textContent = "↻ Omläst från GitHub."; $("saveStatus").className = "status ok"; });
+$("testBtn").addEventListener("click", () => korWorkflow("test.yml", "testBtn", "Testnotis på väg – kolla mobilen om ~30 sek!"));
+$("runBtn").addEventListener("click", () => korWorkflow("bostadsvakt.yml", "runBtn", "Bevakningen startad – se Senaste körningar nedan."));
+
+if (token) loggaIn(); else visa("login");
+</script>
+</body>
+</html>
