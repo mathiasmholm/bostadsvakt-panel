@@ -236,6 +236,16 @@
     </div>
 
     <div class="card">
+      <h2><svg width="16" height="16" viewBox="0 0 24 24"><use href="#i-search"/></svg> Analysera en annons</h2>
+      <label class="lbl" for="fAnnonsUrl">Klistra in en Hemnet-länk så mäts pendling, natur och grannar mot dina krav – resultatet kommer som push</label>
+      <div class="row" style="flex-wrap:nowrap">
+        <input type="text" id="fAnnonsUrl" placeholder="https://www.hemnet.se/bostad/…" style="flex:1">
+        <button id="analyseraBtn">Analysera</button>
+      </div>
+      <div class="status" id="analysStatus"></div>
+    </div>
+
+    <div class="card">
       <h2><svg width="16" height="16" viewBox="0 0 24 24"><use href="#i-play"/></svg> Kör</h2>
       <div class="row">
         <button class="ghost" id="testBtn">Skicka testnotis</button>
@@ -363,12 +373,12 @@ async function skrivConfig(cfg, forsokKvar = 1) {
   configSha = (await res.json()).content.sha;
 }
 
-async function korWorkflow(fil, knappId, text) {
-  const btn = $(knappId), st = $("runStatus");
+async function korWorkflow(fil, knappId, text, inputs = undefined, statusId = "runStatus") {
+  const btn = $(knappId), st = $(statusId);
   btn.disabled = true; st.textContent = "Startar …"; st.className = "status";
   try {
     const res = await fetch(`${API}/actions/workflows/${fil}/dispatches`, {
-      method: "POST", headers: hdrs(), body: JSON.stringify({ ref: "main" }),
+      method: "POST", headers: hdrs(), body: JSON.stringify({ ref: "main", ...(inputs && { inputs }) }),
     });
     if (res.status !== 204) throw new Error(`GitHub svarade ${res.status}`);
     st.textContent = text; st.className = "status ok";
@@ -424,6 +434,16 @@ $("tokenInput").addEventListener("keydown", (e) => { if (e.key === "Enter") $("l
 $("logoutBtn").addEventListener("click", () => { localStorage.removeItem("bv_token"); token = ""; clearInterval(runsTimer); $("tokenInput").value = ""; visa("login"); });
 $("saveBtn").addEventListener("click", sparaConfig);
 $("reloadBtn").addEventListener("click", async () => { await laddaConfig(); $("saveStatus").textContent = "Omläst från GitHub."; $("saveStatus").className = "status ok"; });
+$("analyseraBtn").addEventListener("click", () => {
+  const url = $("fAnnonsUrl").value.trim();
+  const st = $("analysStatus");
+  if (!/hemnet\.se\/bostad\//.test(url)) {
+    st.textContent = "Klistra in en Hemnet-annonslänk (hemnet.se/bostad/…)."; st.className = "status err";
+    return;
+  }
+  korWorkflow("analysera.yml", "analyseraBtn", "Analys startad – resultatet kommer som push om ungefär en minut.", { url }, "analysStatus");
+});
+$("fAnnonsUrl").addEventListener("keydown", (e) => { if (e.key === "Enter") $("analyseraBtn").click(); });
 $("testBtn").addEventListener("click", () => korWorkflow("test.yml", "testBtn", "Testnotis på väg – kolla mobilen om cirka 30 sekunder."));
 $("runBtn").addEventListener("click", () => korWorkflow("bostadsvakt.yml", "runBtn", "Bevakningen startad – följ den under Senaste körningar."));
 
