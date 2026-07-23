@@ -17,8 +17,7 @@
   }
   * { box-sizing:border-box; margin:0; }
   body { background:var(--bg); color:var(--text); -webkit-font-smoothing:antialiased;
-    font:15px/1.55 "Inter","Segoe UI",system-ui,-apple-system,sans-serif;
-    min-height:100vh; padding-bottom:64px; }
+    font:15px/1.55 "Inter","Segoe UI",system-ui,-apple-system,sans-serif; min-height:100vh; padding-bottom:64px; }
   .wrap { max-width:860px; margin:0 auto; padding:0 20px; }
 
   .topbar { border-bottom:1px solid var(--border); background:var(--surface); position:sticky; top:0; z-index:5; }
@@ -30,13 +29,13 @@
   .chip { font-size:.76rem; color:var(--muted); background:var(--surface2); border:1px solid var(--border);
     border-radius:99px; padding:4px 12px; white-space:nowrap; }
 
-  .tabs { display:flex; gap:4px; border-bottom:1px solid var(--border); background:var(--surface);
-    position:sticky; top:60px; z-index:4; }
+  .tabs { display:flex; border-bottom:1px solid var(--border); background:var(--surface); position:sticky; top:60px; z-index:4; }
   .tabs .wrap { display:flex; gap:4px; padding:0 20px; }
   .tab { appearance:none; border:0; background:none; color:var(--muted); font:inherit; font-weight:600;
-    font-size:.9rem; padding:13px 14px; cursor:pointer; border-bottom:2px solid transparent; }
+    font-size:.9rem; padding:13px 14px; cursor:pointer; border-bottom:2px solid transparent; display:flex; align-items:center; gap:6px; }
   .tab:hover { color:var(--text); }
   .tab.aktiv { color:var(--accent); border-bottom-color:var(--accent); }
+  .tab .las { width:12px; height:12px; opacity:.7; }
 
   .card { background:var(--surface); border:1px solid var(--border); border-radius:var(--r); padding:24px; margin-top:20px; }
   .card > h2 { font-size:.78rem; font-weight:600; text-transform:uppercase; letter-spacing:.09em;
@@ -74,7 +73,6 @@
   .status { font-size:.85rem; min-height:1.4em; margin-top:12px; color:var(--muted); }
   .status.ok { color:var(--ok); } .status.err { color:var(--err); }
 
-  /* Bostäder-galleri */
   .galleri { display:grid; grid-template-columns:repeat(auto-fill,minmax(250px,1fr)); gap:16px; margin-top:20px; }
   .hus { background:var(--surface); border:1px solid var(--border); border-radius:var(--r); overflow:hidden;
     display:flex; flex-direction:column; position:relative; }
@@ -87,18 +85,16 @@
   .hus .fakta { font-size:.82rem; color:var(--muted); margin:4px 0 8px; }
   .hus .detalj { font-size:.8rem; color:var(--muted); line-height:1.5; }
   .hus .foot { margin-top:auto; padding-top:12px; display:flex; gap:8px; }
-  .hus .foot a { flex:1; text-align:center; text-decoration:none; font-size:.82rem; font-weight:600;
-    padding:8px; border-radius:8px; background:var(--accent); color:#fff; }
+  .hus .foot a { flex:1; text-align:center; text-decoration:none; font-size:.82rem; font-weight:600; padding:8px; border-radius:8px; background:var(--accent); color:#fff; }
   .hus .foot a.sekundar { background:var(--surface2); color:var(--text); border:1px solid var(--border); }
-  .hus .badge { position:absolute; top:10px; left:10px; font-size:.72rem; font-weight:700; padding:3px 9px;
-    border-radius:99px; background:var(--ok); color:#04120c; }
+  .hus .badge { position:absolute; top:10px; left:10px; font-size:.72rem; font-weight:700; padding:3px 9px; border-radius:99px; background:var(--ok); color:#04120c; }
   .hus .stang { position:absolute; top:8px; right:8px; width:26px; height:26px; padding:0; border-radius:50%;
     background:rgba(0,0,0,.55); color:#fff; font-size:1rem; line-height:1; display:flex; align-items:center; justify-content:center; }
   .hus .tid { font-size:.72rem; color:var(--muted); margin-top:8px; }
   .tomt { text-align:center; color:var(--muted); padding:48px 20px; font-size:.92rem; }
 
   .hint { font-size:.8rem; color:var(--muted); margin-top:12px; }
-  .hint a { color:var(--accent); text-decoration:none; }
+  .hint a { color:var(--accent); text-decoration:none; cursor:pointer; }
   .runs { list-style:none; display:flex; flex-direction:column; }
   .runs li { display:flex; align-items:center; gap:12px; padding:10px 2px; font-size:.88rem; border-top:1px solid var(--border); }
   .runs li:first-child { border-top:0; }
@@ -107,9 +103,6 @@
   .runs a:hover { color:var(--accent); }
   .runs .t { color:var(--muted); margin-left:auto; white-space:nowrap; font-size:.8rem; }
 
-  #loginView .card { max-width:460px; margin:10vh auto 0; }
-  #loginView h1 { font-size:1.25rem; margin-bottom:4px; }
-  #loginView p { font-size:.88rem; color:var(--muted); margin-bottom:18px; }
   details { margin-top:16px; font-size:.85rem; }
   summary { cursor:pointer; color:var(--accent); }
   ol.steps { margin:10px 0 0 18px; color:var(--muted); }
@@ -126,13 +119,56 @@
   <g id="i-pin"><path d="M12 21s-7-5.5-7-11a7 7 0 0 1 14 0c0 5.5-7 11-7 11Z" fill="none" stroke="currentColor" stroke-width="2"/><circle cx="12" cy="10" r="2.5" fill="none" stroke="currentColor" stroke-width="2"/></g>
   <g id="i-play"><path d="M7 4.5v15l12-7.5Z" fill="none" stroke="currentColor" stroke-width="2" stroke-linejoin="round"/></g>
   <g id="i-clock"><circle cx="12" cy="12" r="8.5" fill="none" stroke="currentColor" stroke-width="2"/><path d="M12 7.5V12l3 2" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"/></g>
+  <g id="i-lock"><rect x="5" y="11" width="14" height="9" rx="2" fill="none" stroke="currentColor" stroke-width="2"/><path d="M8 11V8a4 4 0 0 1 8 0v3" fill="none" stroke="currentColor" stroke-width="2"/></g>
+  <g id="i-plus"><path d="M12 5v14M5 12h14" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"/></g>
 </defs></svg>
 
-<!-- ===== Inloggning ===== -->
-<div id="loginView" class="wrap">
+<div class="topbar"><div class="wrap">
+  <div class="brand">
+    <svg width="22" height="22" viewBox="0 0 24 24"><use href="#i-home"/></svg>
+    <div>Bostadsvakt<small>Husbevakning · Uppsala &amp; Roslagen</small></div>
+  </div>
+  <div class="spacer"></div>
+  <span class="chip hidden" id="repoPill">mathiasmholm/bostadsvakt</span>
+  <button class="ghost hidden" id="logoutBtn" style="padding:6px 14px;font-size:.8rem">Logga ut</button>
+</div></div>
+
+<div class="tabs"><div class="wrap">
+  <button class="tab aktiv" data-tab="bostader">Bostäder</button>
+  <button class="tab" data-tab="installningar">Inställningar
+    <svg class="las" viewBox="0 0 24 24"><use href="#i-lock"/></svg></button>
+</div></div>
+
+<!-- Flik: Bostäder (öppen) -->
+<div class="wrap tabpanel" data-panel="bostader">
   <div class="card">
-    <h1>Bostadsvakt</h1>
-    <p>Logga in med en personlig GitHub-token. Den sparas enbart i den här webbläsaren och skickas bara till GitHubs API.</p>
+    <h2><svg width="16" height="16" viewBox="0 0 24 24"><use href="#i-plus"/></svg> Spara en bostad</h2>
+    <label class="lbl" for="fSparaUrl">Klistra in en Hemnet-länk – huset mäts mot dina krav och läggs till nedan (kräver inloggning)</label>
+    <div class="row" style="flex-wrap:nowrap">
+      <input type="text" id="fSparaUrl" placeholder="https://www.hemnet.se/bostad/…" style="flex:1">
+      <button id="sparaBtn">Spara</button>
+    </div>
+    <div class="status" id="sparaStatus"></div>
+  </div>
+
+  <div class="row" style="justify-content:space-between; margin-top:20px">
+    <div style="font-size:.82rem; color:var(--muted)" id="traffInfo"></div>
+    <button class="ghost" id="uppdateraBtn" style="padding:6px 12px; font-size:.8rem">Uppdatera</button>
+  </div>
+  <div class="galleri" id="galleri"></div>
+  <div class="tomt hidden" id="tomtLage">
+    Inga sparade bostäder än. När nattbevakningen hittar ett hus som klarar dina krav dyker det upp här –
+    eller spara ett själv genom att klistra in en Hemnet-länk ovan.
+  </div>
+</div>
+
+<!-- Flik: Inställningar (låst) -->
+<div class="wrap tabpanel hidden" data-panel="installningar">
+
+  <!-- Inloggning -->
+  <div id="loginCard" class="card">
+    <h2><svg width="16" height="16" viewBox="0 0 24 24"><use href="#i-lock"/></svg> Logga in för att ändra</h2>
+    <p style="font-size:.88rem; color:var(--muted); margin-bottom:16px">Att spara bostäder och ändra inställningar skriver till GitHub och kräver en personlig token. Den sparas bara i den här webbläsaren.</p>
     <label class="lbl" for="tokenInput">GitHub-token</label>
     <input type="password" id="tokenInput" placeholder="github_pat_…" autocomplete="off">
     <div class="row" style="margin-top:14px"><button id="loginBtn">Logga in</button></div>
@@ -147,57 +183,16 @@
       </ol>
     </details>
   </div>
-</div>
 
-<!-- ===== App ===== -->
-<div id="appView" class="hidden">
-  <div class="topbar"><div class="wrap">
-    <div class="brand">
-      <svg width="22" height="22" viewBox="0 0 24 24"><use href="#i-home"/></svg>
-      <div>Bostadsvakt<small>Husbevakning · Uppsala &amp; Roslagen</small></div>
-    </div>
-    <div class="spacer"></div>
-    <button class="ghost" id="logoutBtn" style="padding:6px 14px;font-size:.8rem">Logga ut</button>
-  </div></div>
-
-  <div class="tabs"><div class="wrap">
-    <button class="tab aktiv" data-tab="bostader">Bostäder</button>
-    <button class="tab" data-tab="installningar">Inställningar</button>
-    <button class="tab" data-tab="kor">Kör</button>
-  </div></div>
-
-  <!-- Flik: Bostäder -->
-  <div class="wrap tabpanel" data-panel="bostader">
-    <div class="row" style="justify-content:space-between; margin-top:20px">
-      <div style="font-size:.82rem; color:var(--muted)" id="traffInfo"></div>
-      <button class="ghost" id="uppdateraBtn" style="padding:6px 12px; font-size:.8rem">Uppdatera</button>
-    </div>
-    <div class="galleri" id="galleri"></div>
-    <div class="tomt hidden" id="tomtLage">
-      Inga träffar än. När bevakningen hittar ett hus som uppfyller dina krav dyker det upp här –
-      och som push i mobilen. Du kan även testa en annons under fliken Kör.
-    </div>
-  </div>
-
-  <!-- Flik: Inställningar -->
-  <div class="wrap tabpanel hidden" data-panel="installningar">
+  <!-- Inloggat innehåll -->
+  <div id="adminInnehall" class="hidden">
     <div class="card">
       <h2><svg width="16" height="16" viewBox="0 0 24 24"><use href="#i-search"/></svg> Bevakning</h2>
       <div class="grid">
-        <div class="full">
-          <label class="lbl" for="fOmraden">Sökområden (kommaseparerade)</label>
-          <input type="text" id="fOmraden" placeholder="Uppsala, Norrtälje">
-        </div>
-        <div>
-          <label class="lbl" for="fMaxPris">Maxpris, kr (tomt = inget tak)</label>
-          <input type="number" id="fMaxPris" min="0" step="100000" placeholder="t.ex. 5 500 000">
-        </div>
-        <div>
-          <label class="lbl" for="fNotislage">Notiser</label>
-          <select id="fNotislage">
-            <option value="traffar">Endast hus som uppfyller alla krav</option>
-            <option value="alla">Alla nya annonser (fullträffar markeras)</option>
-          </select>
+        <div class="full"><label class="lbl" for="fOmraden">Sökområden (kommaseparerade)</label><input type="text" id="fOmraden" placeholder="Uppsala, Norrtälje"></div>
+        <div><label class="lbl" for="fMaxPris">Maxpris, kr (tomt = inget tak)</label><input type="number" id="fMaxPris" min="0" step="100000" placeholder="t.ex. 5 500 000"></div>
+        <div><label class="lbl" for="fNotislage">Notiser</label>
+          <select id="fNotislage"><option value="traffar">Endast hus som uppfyller alla krav</option><option value="alla">Alla nya annonser (fullträffar markeras)</option></select>
         </div>
       </div>
     </div>
@@ -229,44 +224,19 @@
         <div class="slider"><div class="head"><label class="lbl" for="fGrannar">Max grannbyggnader inom 300 m</label><span class="val" id="oGrannar"></span></div><input type="range" id="fGrannar" min="0" max="100" step="1"></div>
         <div><label class="lbl" for="fRestid">Max restid till Stockholm C, minuter (tomt = inget krav)</label><input type="number" id="fRestid" min="0" step="5" placeholder="t.ex. 90"></div>
         <div><label class="lbl" for="fKravNatur">Krav på natur i närheten</label>
-          <select id="fKravNatur">
-            <option value="något">Vatten eller skog inom maxavstånd</option>
-            <option value="båda">Både vatten och skog inom maxavstånd</option>
-            <option value="inget">Inget krav – visa bara avstånden</option>
-          </select>
+          <select id="fKravNatur"><option value="något">Vatten eller skog inom maxavstånd</option><option value="båda">Både vatten och skog inom maxavstånd</option><option value="inget">Inget krav – visa bara avstånden</option></select>
         </div>
       </div>
-      <div class="row" style="margin-top:20px">
-        <button id="saveBtn">Spara inställningar</button>
-        <button class="ghost" id="reloadBtn">Ladda om</button>
-      </div>
+      <div class="row" style="margin-top:20px"><button id="saveBtn">Spara inställningar</button><button class="ghost" id="reloadBtn">Ladda om</button></div>
       <div class="status" id="saveStatus"></div>
     </div>
-  </div>
 
-  <!-- Flik: Kör -->
-  <div class="wrap tabpanel hidden" data-panel="kor">
-    <div class="card">
-      <h2><svg width="16" height="16" viewBox="0 0 24 24"><use href="#i-search"/></svg> Analysera en annons</h2>
-      <label class="lbl" for="fAnnonsUrl">Klistra in en Hemnet-länk så mäts pendling, natur och grannar mot dina krav – resultatet kommer som push</label>
-      <div class="row" style="flex-wrap:nowrap">
-        <input type="text" id="fAnnonsUrl" placeholder="https://www.hemnet.se/bostad/…" style="flex:1">
-        <button id="analyseraBtn">Analysera</button>
-      </div>
-      <div class="status" id="analysStatus"></div>
-    </div>
     <div class="card">
       <h2><svg width="16" height="16" viewBox="0 0 24 24"><use href="#i-play"/></svg> Kör</h2>
-      <div class="row">
-        <button class="ghost" id="testBtn">Skicka testnotis</button>
-        <button class="ghost" id="runBtn">Kör bevakningen nu</button>
-      </div>
+      <div class="row"><button class="ghost" id="testBtn">Skicka testnotis</button><button class="ghost" id="runBtn">Kör bevakningen nu</button></div>
       <div class="status" id="runStatus"></div>
-    </div>
-    <div class="card">
-      <h2><svg width="16" height="16" viewBox="0 0 24 24"><use href="#i-clock"/></svg> Senaste körningar</h2>
-      <ul class="runs" id="runsList"><li>Laddar …</li></ul>
-      <p class="hint">Uppdateras automatiskt. <a id="actionsLink" target="_blank" rel="noopener">Öppna Actions på GitHub →</a></p>
+      <ul class="runs" id="runsList" style="margin-top:16px"><li>Laddar …</li></ul>
+      <p class="hint"><a id="actionsLink" target="_blank" rel="noopener">Öppna Actions på GitHub →</a></p>
     </div>
   </div>
 </div>
@@ -274,6 +244,7 @@
 <script>
 const OWNER = "mathiasmholm", REPO = "bostadsvakt";
 const API = `https://api.github.com/repos/${OWNER}/${REPO}`;
+const LOKAL_TRAFFAR = "bostadsvakt-traffar.json"; // hämtas till HA:s www av server-jobbet
 let token = localStorage.getItem("bv_token") || "";
 let runsTimer = null;
 
@@ -283,8 +254,8 @@ const b64decode = (s) => new TextDecoder().decode(Uint8Array.from(atob(s.replace
 const b64encode = (s) => btoa(String.fromCharCode(...new TextEncoder().encode(s)));
 const meter = (n) => n >= 1000 ? (n / 1000).toLocaleString("sv-SE", { maximumFractionDigits: 2 }) + " km" : n + " m";
 const esc = (s) => String(s ?? "").replace(/[&<>"]/g, c => ({ "&":"&amp;","<":"&lt;",">":"&gt;",'"':"&quot;" }[c]));
+const inloggad = () => Boolean(token);
 
-// ---- GitHub-filer ----
 async function hamtaFil(path) {
   const res = await fetch(`${API}/contents/${path}?ref=main`, { headers: hdrs(), cache: "no-store" });
   if (res.status === 404) return { sha: null, json: null };
@@ -308,9 +279,10 @@ for (const tab of document.querySelectorAll(".tab")) {
     document.querySelectorAll(".tab").forEach(t => t.classList.toggle("aktiv", t === tab));
     document.querySelectorAll(".tabpanel").forEach(p => p.classList.toggle("hidden", p.dataset.panel !== tab.dataset.tab));
     if (tab.dataset.tab === "bostader") laddaTraffar();
-    if (tab.dataset.tab === "kor") laddaKorningar();
+    if (tab.dataset.tab === "installningar" && inloggad()) laddaKorningar();
   });
 }
+function bytFlik(namn) { document.querySelector(`.tab[data-tab=${namn}]`).click(); }
 
 // ---- Bostäder ----
 function relTid(iso) {
@@ -321,17 +293,27 @@ function relTid(iso) {
   return new Date(iso).toLocaleDateString("sv-SE", { day: "numeric", month: "short" });
 }
 async function laddaTraffar() {
-  try {
-    const { json } = await hamtaFil("data/traffar.json");
-    const lista = (json ?? []).filter(t => !t.dold);
-    $("traffInfo").textContent = lista.length ? `${lista.length} sparade bostäder` : "";
-    $("tomtLage").classList.toggle("hidden", lista.length > 0);
-    $("galleri").innerHTML = lista.map(kortHtml).join("");
-    for (const btn of $("galleri").querySelectorAll(".stang"))
-      btn.addEventListener("click", () => taBort(btn.dataset.id));
-  } catch (e) {
-    $("traffInfo").textContent = "Kunde inte hämta bostäder: " + e.message;
+  let lista = null;
+  // Inloggad → hämta färskt från GitHub. Annars → lokal fil (ingen inloggning, bakom VPN).
+  if (inloggad()) {
+    try { lista = (await hamtaFil("data/traffar.json")).json ?? []; } catch {}
   }
+  if (lista === null) {
+    try {
+      const r = await fetch(`${LOKAL_TRAFFAR}?t=${Date.now()}`, { cache: "no-store" });
+      if (r.ok) lista = await r.json();
+    } catch {}
+  }
+  if (lista === null) {
+    $("traffInfo").textContent = "Kunde inte hämta bostäder – logga in under Inställningar.";
+    $("galleri").innerHTML = ""; $("tomtLage").classList.add("hidden");
+    return;
+  }
+  lista = lista.filter(t => !t.dold);
+  $("traffInfo").textContent = lista.length ? `${lista.length} sparade bostäder` : "";
+  $("tomtLage").classList.toggle("hidden", lista.length > 0);
+  $("galleri").innerHTML = lista.map(kortHtml).join("");
+  for (const btn of $("galleri").querySelectorAll(".stang")) btn.addEventListener("click", () => taBort(btn.dataset.id));
 }
 function kortHtml(t) {
   const pris = t.pris ? t.pris.toLocaleString("sv-SE") + " kr" : "Pris ej satt";
@@ -342,10 +324,9 @@ function kortHtml(t) {
     : `<div class="foto saknas">Ingen bild</div>`;
   const karta = (t.lat != null && t.lon != null)
     ? `<a class="sekundar" href="https://www.google.com/maps?q=${t.lat},${t.lon}" target="_blank" rel="noopener">Karta</a>` : "";
+  const stang = inloggad() ? `<button class="stang" data-id="${esc(t.id)}" title="Ta bort">×</button>` : "";
   return `<div class="hus">
-    ${t.uppfyller ? '<span class="badge">Träff</span>' : ''}
-    <button class="stang" data-id="${esc(t.id)}" title="Ta bort">×</button>
-    ${foto}
+    ${t.uppfyller ? '<span class="badge">Träff</span>' : ''}${stang}${foto}
     <div class="kropp">
       <div class="pris">${esc(pris)}</div>
       <div class="titel">${esc(t.typ || "Bostad")}${t.omrade ? " i " + esc(t.omrade) : ""}</div>
@@ -353,20 +334,23 @@ function kortHtml(t) {
       <div class="fakta">${esc(fakta)}</div>
       <div class="detalj">${detaljer}</div>
       <div class="tid">${esc(t.kalla || "")}${t.tidpunkt ? " · " + relTid(t.tidpunkt) : ""}</div>
-      <div class="foot">
-        <a href="${esc(t.url)}" target="_blank" rel="noopener">Öppna annons</a>
-        ${karta}
-      </div>
-    </div>
-  </div>`;
+      <div class="foot"><a href="${esc(t.url)}" target="_blank" rel="noopener">Öppna annons</a>${karta}</div>
+    </div></div>`;
 }
 async function taBort(id) {
+  if (!inloggad()) return;
   try {
     const { json } = await hamtaFil("data/traffar.json");
-    const lista = (json ?? []).filter(t => t.id !== id);
-    await skrivFil("data/traffar.json", lista, "Ta bort bostad via panelen");
+    await skrivFil("data/traffar.json", (json ?? []).filter(t => t.id !== id), "Ta bort bostad via panelen");
     laddaTraffar();
   } catch (e) { alert("Kunde inte ta bort: " + e.message); }
+}
+function spara() {
+  const url = $("fSparaUrl").value.trim(), st = $("sparaStatus");
+  if (!/hemnet\.se\/bostad\//.test(url)) { st.textContent = "Klistra in en Hemnet-annonslänk (hemnet.se/bostad/…)."; st.className = "status err"; return; }
+  if (!inloggad()) { st.textContent = "Logga in under Inställningar för att spara bostäder."; st.className = "status err"; bytFlik("installningar"); return; }
+  korWorkflow("analysera.yml", "sparaBtn", "Sparar … huset dyker upp i listan om någon minut.", { url }, "sparaStatus");
+  $("fSparaUrl").value = "";
 }
 
 // ---- Inställningar ----
@@ -402,22 +386,16 @@ async function sparaConfig() {
     const tal = (id) => $(id).value.trim() === "" ? null : Number($(id).value);
     const searches = $("fOmraden").value.split(",").map(s => s.trim()).filter(Boolean).map(namn => ({ namn, q: namn }));
     if (searches.length === 0) throw new Error("ange minst ett sökområde");
-    const cfg = {
-      searches,
-      kriterier: {
-        objectType: typer.join(","), maxPris: tal("fMaxPris"), minRum: tal("fMinRum"),
-        minBoarea: tal("fMinBoarea"), minTomtarea: tal("fMinTomt"),
+    const cfg = { searches, kriterier: {
+        objectType: typer.join(","), maxPris: tal("fMaxPris"), minRum: tal("fMinRum"), minBoarea: tal("fMinBoarea"), minTomtarea: tal("fMinTomt"),
         "maxAvståndHållplatsM": Number($("fHallplats").value), maxRestidStockholmMin: tal("fRestid"),
         "maxAvståndVattenM": Number($("fVatten").value), "maxAvståndSkogM": Number($("fSkog").value),
         kravNatur: $("fKravNatur").value, "maxGrannarInom300m": Number($("fGrannar").value),
-      },
-      notiser: { "endastTräffar": $("fNotislage").value === "traffar" },
-    };
+      }, notiser: { "endastTräffar": $("fNotislage").value === "traffar" } };
     await skrivFil("config.json", cfg, "Ändra inställningar via kontrollpanelen");
     st.textContent = "Sparat. Nästa körning använder de nya kriterierna."; st.className = "status ok";
-  } catch (e) {
-    st.textContent = "Kunde inte spara: " + e.message; st.className = "status err";
-  } finally { btn.disabled = false; }
+  } catch (e) { st.textContent = "Kunde inte spara: " + e.message; st.className = "status err"; }
+  finally { btn.disabled = false; }
 }
 
 // ---- Kör ----
@@ -426,31 +404,30 @@ async function korWorkflow(fil, knappId, text, inputs, statusId = "runStatus") {
   btn.disabled = true; st.textContent = "Startar …"; st.className = "status";
   try {
     const res = await fetch(`${API}/actions/workflows/${fil}/dispatches`, {
-      method: "POST", headers: hdrs(), body: JSON.stringify({ ref: "main", ...(inputs && { inputs }) }),
-    });
+      method: "POST", headers: hdrs(), body: JSON.stringify({ ref: "main", ...(inputs && { inputs }) }) });
     if (res.status !== 204) throw new Error(`GitHub svarade ${res.status}`);
     st.textContent = text; st.className = "status ok";
-    setTimeout(laddaKorningar, 4000);
   } catch (e) { st.textContent = "Gick inte att starta: " + e.message; st.className = "status err"; }
   finally { btn.disabled = false; }
 }
 async function laddaKorningar() {
   try {
-    const res = await fetch(`${API}/actions/runs?per_page=8`, { headers: hdrs(), cache: "no-store" });
+    const res = await fetch(`${API}/actions/runs?per_page=6`, { headers: hdrs(), cache: "no-store" });
     if (!res.ok) return;
     const data = await res.json();
     const farg = (r) => r.status !== "completed" ? "var(--warn)" : r.conclusion === "success" ? "var(--ok)" : "var(--err)";
     $("runsList").innerHTML = (data.workflow_runs ?? []).map(r =>
-      `<li><span class="dot" style="background:${farg(r)}"></span>
-        <a href="${r.html_url}" target="_blank" rel="noopener">${esc(r.name)}</a>
-        <span class="t">${relTid(r.created_at)}</span></li>`).join("") || "<li>Inga körningar ännu.</li>";
-  } catch { /* behåll listan */ }
+      `<li><span class="dot" style="background:${farg(r)}"></span><a href="${r.html_url}" target="_blank" rel="noopener">${esc(r.name)}</a><span class="t">${relTid(r.created_at)}</span></li>`).join("") || "<li>Inga körningar ännu.</li>";
+  } catch {}
 }
 
 // ---- Inloggning ----
-function visa(vy) {
-  $("loginView").classList.toggle("hidden", vy !== "login");
-  $("appView").classList.toggle("hidden", vy !== "app");
+function uppdateraInloggUI() {
+  $("loginCard").classList.toggle("hidden", inloggad());
+  $("adminInnehall").classList.toggle("hidden", !inloggad());
+  $("logoutBtn").classList.toggle("hidden", !inloggad());
+  $("repoPill").classList.toggle("hidden", !inloggad());
+  $("actionsLink").href = `https://github.com/${OWNER}/${REPO}/actions`;
 }
 async function loggaIn() {
   const st = $("loginStatus");
@@ -458,32 +435,32 @@ async function loggaIn() {
   try {
     await laddaConfig();
     localStorage.setItem("bv_token", token);
-    $("actionsLink").href = `https://github.com/${OWNER}/${REPO}/actions`;
-    visa("app");
+    uppdateraInloggUI();
+    laddaKorningar();
     laddaTraffar();
     clearInterval(runsTimer);
-    runsTimer = setInterval(() => { if (!$("appView").classList.contains("hidden")) laddaKorningar(); }, 30000);
+    runsTimer = setInterval(() => { if (inloggad() && !$("adminInnehall").classList.contains("hidden")) laddaKorningar(); }, 30000);
   } catch (e) {
+    token = "";
     st.textContent = "Token fungerar inte (" + e.message + "). Kontrollera behörigheterna: Contents och Actions, read/write.";
-    st.className = "status err"; visa("login");
+    st.className = "status err"; uppdateraInloggUI();
   }
 }
 $("loginBtn").addEventListener("click", () => { token = $("tokenInput").value.trim(); if (token) loggaIn(); });
 $("tokenInput").addEventListener("keydown", e => { if (e.key === "Enter") $("loginBtn").click(); });
-$("logoutBtn").addEventListener("click", () => { localStorage.removeItem("bv_token"); token = ""; clearInterval(runsTimer); $("tokenInput").value = ""; visa("login"); });
+$("logoutBtn").addEventListener("click", () => { localStorage.removeItem("bv_token"); token = ""; clearInterval(runsTimer); $("tokenInput").value = ""; uppdateraInloggUI(); laddaTraffar(); });
 $("uppdateraBtn").addEventListener("click", laddaTraffar);
+$("sparaBtn").addEventListener("click", spara);
+$("fSparaUrl").addEventListener("keydown", e => { if (e.key === "Enter") spara(); });
 $("saveBtn").addEventListener("click", sparaConfig);
 $("reloadBtn").addEventListener("click", async () => { await laddaConfig(); $("saveStatus").textContent = "Omläst från GitHub."; $("saveStatus").className = "status ok"; });
-$("analyseraBtn").addEventListener("click", () => {
-  const url = $("fAnnonsUrl").value.trim();
-  if (!/hemnet\.se\/bostad\//.test(url)) { $("analysStatus").textContent = "Klistra in en Hemnet-annonslänk (hemnet.se/bostad/…)."; $("analysStatus").className = "status err"; return; }
-  korWorkflow("analysera.yml", "analyseraBtn", "Analys startad – resultatet kommer som push om ungefär en minut.", { url }, "analysStatus");
-});
-$("fAnnonsUrl").addEventListener("keydown", e => { if (e.key === "Enter") $("analyseraBtn").click(); });
 $("testBtn").addEventListener("click", () => korWorkflow("test.yml", "testBtn", "Testnotis på väg – kolla mobilen om cirka 30 sekunder."));
-$("runBtn").addEventListener("click", () => korWorkflow("bostadsvakt.yml", "runBtn", "Bevakningen startad – följ den under Senaste körningar."));
+$("runBtn").addEventListener("click", () => korWorkflow("bostadsvakt.yml", "runBtn", "Bevakningen startad – följ den under Kör."));
 
-if (token) loggaIn(); else visa("login");
+// Start: visa Bostäder direkt (ingen inloggning krävs)
+uppdateraInloggUI();
+if (inloggad()) loggaIn();
+laddaTraffar();
 </script>
 </body>
 </html>
