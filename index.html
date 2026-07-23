@@ -215,7 +215,11 @@
           <div class="head"><label class="lbl" for="fGrannar">Max grannbyggnader inom 300 m</label><span class="val" id="oGrannar"></span></div>
           <input type="range" id="fGrannar" min="0" max="100" step="1">
         </div>
-        <div class="full">
+        <div>
+          <label class="lbl" for="fRestid">Max restid till Stockholm C, minuter (tomt = inget krav)</label>
+          <input type="number" id="fRestid" min="0" step="5" placeholder="t.ex. 90">
+        </div>
+        <div>
           <label class="lbl" for="fKravNatur">Krav på natur i närheten</label>
           <select id="fKravNatur">
             <option value="något">Vatten eller skog inom maxavstånd</option>
@@ -295,6 +299,7 @@ async function laddaConfig() {
   $("fMinBoarea").value = k.minBoarea ?? "";
   $("fMinTomt").value = k.minTomtarea ?? "";
 
+  $("fRestid").value = k.maxRestidStockholmMin ?? "";
   sattReglage("fHallplats", "oHallplats", k["maxAvståndHållplatsM"]);
   sattReglage("fVatten", "oVatten", k["maxAvståndVattenM"]);
   sattReglage("fSkog", "oSkog", k["maxAvståndSkogM"]);
@@ -324,6 +329,7 @@ async function sparaConfig() {
         minBoarea: tal("fMinBoarea"),
         minTomtarea: tal("fMinTomt"),
         "maxAvståndHållplatsM": Number($("fHallplats").value),
+        maxRestidStockholmMin: tal("fRestid"),
         "maxAvståndVattenM": Number($("fVatten").value),
         "maxAvståndSkogM": Number($("fSkog").value),
         kravNatur: $("fKravNatur").value,
