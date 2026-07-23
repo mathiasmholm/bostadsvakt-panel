@@ -249,6 +249,22 @@
 </div>
 
 <script>
+// Bumpas vid varje paneländring. Server-jobbet skriver senaste numret till
+// bostadsvakt-version.txt; matchar det inte laddar panelen om sig själv en
+// gång med rätt version – så cachen löser sig utan att man rör ?v= manuellt.
+const PANEL_VERSION = "6";
+(async () => {
+  try {
+    const r = await fetch(`bostadsvakt-version.txt?t=${Date.now()}`, { cache: "no-store" });
+    if (!r.ok) return;
+    const senaste = (await r.text()).trim();
+    const nuvarande = new URLSearchParams(location.search).get("v");
+    if (senaste && senaste !== PANEL_VERSION && senaste !== nuvarande) {
+      location.replace(`bostadsvakt.html?v=${encodeURIComponent(senaste)}`);
+    }
+  } catch {}
+})();
+
 const OWNER = "mathiasmholm", REPO = "bostadsvakt";
 const API = `https://api.github.com/repos/${OWNER}/${REPO}`;
 const LOKAL_TRAFFAR = "bostadsvakt-traffar.json"; // hämtas till HA:s www av server-jobbet
