@@ -88,8 +88,12 @@
   .hus .foot a { flex:1; text-align:center; text-decoration:none; font-size:.82rem; font-weight:600; padding:8px; border-radius:8px; background:var(--accent); color:#fff; }
   .hus .foot a.sekundar { background:var(--surface2); color:var(--text); border:1px solid var(--border); }
   .hus .badge { position:absolute; top:10px; left:10px; font-size:.72rem; font-weight:700; padding:3px 9px; border-radius:99px; background:var(--ok); color:#04120c; }
-  .hus .stang { position:absolute; top:8px; right:8px; width:26px; height:26px; padding:0; border-radius:50%;
-    background:rgba(0,0,0,.55); color:#fff; font-size:1rem; line-height:1; display:flex; align-items:center; justify-content:center; }
+  .hus .hjarta { position:absolute; top:8px; right:8px; width:34px; height:34px; padding:0; border-radius:50%;
+    background:rgba(0,0,0,.5); color:#fff; display:flex; align-items:center; justify-content:center; transition:transform .1s; }
+  .hus .hjarta:hover { transform:scale(1.12); background:rgba(0,0,0,.6); }
+  .hus .hjarta svg { width:18px; height:18px; fill:none; }
+  .hus .hjarta.fylld { color:#ff5c7a; }
+  .hus .hjarta.fylld svg { fill:currentColor; }
   .hus .tid { font-size:.72rem; color:var(--muted); margin-top:8px; }
   .tomt { text-align:center; color:var(--muted); padding:48px 20px; font-size:.92rem; }
 
@@ -121,12 +125,13 @@
   <g id="i-clock"><circle cx="12" cy="12" r="8.5" fill="none" stroke="currentColor" stroke-width="2"/><path d="M12 7.5V12l3 2" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"/></g>
   <g id="i-lock"><rect x="5" y="11" width="14" height="9" rx="2" fill="none" stroke="currentColor" stroke-width="2"/><path d="M8 11V8a4 4 0 0 1 8 0v3" fill="none" stroke="currentColor" stroke-width="2"/></g>
   <g id="i-plus"><path d="M12 5v14M5 12h14" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"/></g>
+  <g id="i-heart"><path d="M12 20s-7-4.5-9.2-9C1.3 8.1 2.6 5 5.7 5c1.9 0 3.2 1.1 4.3 2.6C11.1 6.1 12.4 5 14.3 5c3.1 0 4.4 3.1 2.9 6-2.2 4.5-9.2 9-9.2 9Z" stroke="currentColor" stroke-width="2" stroke-linejoin="round"/></g>
 </defs></svg>
 
 <div class="topbar"><div class="wrap">
   <div class="brand">
     <svg width="22" height="22" viewBox="0 0 24 24"><use href="#i-home"/></svg>
-    <div>Bostadsvakt<small>Husbevakning · Uppsala &amp; Roslagen</small></div>
+    <div>Bostadsvakt<small>Ellinor &amp; Mathias Husbevakning</small></div>
   </div>
   <div class="spacer"></div>
   <span class="chip hidden" id="repoPill">mathiasmholm/bostadsvakt</span>
@@ -135,30 +140,32 @@
 
 <div class="tabs"><div class="wrap">
   <button class="tab aktiv" data-tab="bostader">Bostäder</button>
+  <button class="tab" data-tab="sparade">Sparade <span id="sparadeRakn"></span></button>
   <button class="tab" data-tab="installningar">Inställningar
     <svg class="las" viewBox="0 0 24 24"><use href="#i-lock"/></svg></button>
 </div></div>
 
 <!-- Flik: Bostäder (öppen) -->
 <div class="wrap tabpanel" data-panel="bostader">
-  <div class="card">
-    <h2><svg width="16" height="16" viewBox="0 0 24 24"><use href="#i-plus"/></svg> Spara en bostad</h2>
-    <label class="lbl" for="fSparaUrl">Klistra in en Hemnet-länk – huset mäts mot dina krav och läggs till nedan (kräver inloggning)</label>
-    <div class="row" style="flex-wrap:nowrap">
-      <input type="text" id="fSparaUrl" placeholder="https://www.hemnet.se/bostad/…" style="flex:1">
-      <button id="sparaBtn">Spara</button>
-    </div>
-    <div class="status" id="sparaStatus"></div>
-  </div>
-
   <div class="row" style="justify-content:space-between; margin-top:20px">
     <div style="font-size:.82rem; color:var(--muted)" id="traffInfo"></div>
     <button class="ghost" id="uppdateraBtn" style="padding:6px 12px; font-size:.8rem">Uppdatera</button>
   </div>
   <div class="galleri" id="galleri"></div>
   <div class="tomt hidden" id="tomtLage">
-    Inga sparade bostäder än. När nattbevakningen hittar ett hus som klarar dina krav dyker det upp här –
-    eller spara ett själv genom att klistra in en Hemnet-länk ovan.
+    Inga bostäder än. Bevakningen fyller den här listan varje morgon med hus den hittar i dina områden.
+    Tryck på hjärtat på en bostad för att spara den under Sparade.
+  </div>
+</div>
+
+<!-- Flik: Sparade bostäder (öppen) -->
+<div class="wrap tabpanel hidden" data-panel="sparade">
+  <div class="row" style="justify-content:space-between; margin-top:20px">
+    <div style="font-size:.82rem; color:var(--muted)" id="sparadeInfo"></div>
+  </div>
+  <div class="galleri" id="sparadeGalleri"></div>
+  <div class="tomt hidden" id="sparadeTomt">
+    Inga sparade bostäder än. Tryck på hjärtat på en bostad under Bostäder för att spara den här.
   </div>
 </div>
 
@@ -279,6 +286,7 @@ for (const tab of document.querySelectorAll(".tab")) {
     document.querySelectorAll(".tab").forEach(t => t.classList.toggle("aktiv", t === tab));
     document.querySelectorAll(".tabpanel").forEach(p => p.classList.toggle("hidden", p.dataset.panel !== tab.dataset.tab));
     if (tab.dataset.tab === "bostader") laddaTraffar();
+    if (tab.dataset.tab === "sparade") renderaSparade();
     if (tab.dataset.tab === "installningar" && inloggad()) laddaKorningar();
   });
 }
@@ -292,28 +300,44 @@ function relTid(iso) {
   if (s < 86400) return `${Math.round(s / 3600)} tim sedan`;
   return new Date(iso).toLocaleDateString("sv-SE", { day: "numeric", month: "short" });
 }
+// Favoriter (hjärtan) sparas lokalt i webbläsaren – ingen inloggning behövs.
+const FAV = "bv_favoriter";
+let aktuella = {}; // id -> hus i Bostäder-flödet (för hjärt-uppslag)
+function lasFav() { try { return JSON.parse(localStorage.getItem(FAV)) || {}; } catch { return {}; } }
+function sparaFav(f) { localStorage.setItem(FAV, JSON.stringify(f)); }
+function arFav(id) { return Object.prototype.hasOwnProperty.call(lasFav(), id); }
+function uppdateraSparadeRakn() { const n = Object.keys(lasFav()).length; $("sparadeRakn").textContent = n ? `(${n})` : ""; }
+function vaxlaFav(id) {
+  const f = lasFav();
+  if (f[id]) delete f[id];
+  else { const hus = aktuella[id] || f[id]; if (hus) f[id] = { ...hus, sparadTid: new Date().toISOString() }; }
+  sparaFav(f);
+  uppdateraSparadeRakn();
+  for (const b of document.querySelectorAll(`.hjarta[data-id="${id}"]`)) b.classList.toggle("fylld", arFav(id));
+}
+
 async function laddaTraffar() {
   let lista = null;
   // Inloggad → hämta färskt från GitHub. Annars → lokal fil (ingen inloggning, bakom VPN).
-  if (inloggad()) {
-    try { lista = (await hamtaFil("data/traffar.json")).json ?? []; } catch {}
+  if (inloggad()) { try { lista = (await hamtaFil("data/traffar.json")).json ?? []; } catch {} }
+  if (lista === null) {
+    try { const r = await fetch(`${LOKAL_TRAFFAR}?t=${Date.now()}`, { cache: "no-store" }); if (r.ok) lista = await r.json(); } catch {}
   }
   if (lista === null) {
-    try {
-      const r = await fetch(`${LOKAL_TRAFFAR}?t=${Date.now()}`, { cache: "no-store" });
-      if (r.ok) lista = await r.json();
-    } catch {}
-  }
-  if (lista === null) {
-    $("traffInfo").textContent = "Kunde inte hämta bostäder – logga in under Inställningar.";
-    $("galleri").innerHTML = ""; $("tomtLage").classList.add("hidden");
-    return;
+    $("traffInfo").textContent = "Kunde inte hämta bostäder.";
+    $("galleri").innerHTML = ""; $("tomtLage").classList.add("hidden"); return;
   }
   lista = lista.filter(t => !t.dold);
-  $("traffInfo").textContent = lista.length ? `${lista.length} sparade bostäder` : "";
+  aktuella = Object.fromEntries(lista.map(t => [t.id, t]));
+  $("traffInfo").textContent = lista.length ? `${lista.length} hus hittade` : "";
   $("tomtLage").classList.toggle("hidden", lista.length > 0);
   $("galleri").innerHTML = lista.map(kortHtml).join("");
-  for (const btn of $("galleri").querySelectorAll(".stang")) btn.addEventListener("click", () => taBort(btn.dataset.id));
+}
+function renderaSparade() {
+  const lista = Object.values(lasFav()).sort((a, b) => (b.sparadTid ?? "").localeCompare(a.sparadTid ?? ""));
+  $("sparadeInfo").textContent = lista.length ? `${lista.length} sparade bostäder` : "";
+  $("sparadeTomt").classList.toggle("hidden", lista.length > 0);
+  $("sparadeGalleri").innerHTML = lista.map(kortHtml).join("");
 }
 function kortHtml(t) {
   const pris = t.pris ? t.pris.toLocaleString("sv-SE") + " kr" : "Pris ej satt";
@@ -324,9 +348,10 @@ function kortHtml(t) {
     : `<div class="foto saknas">Ingen bild</div>`;
   const karta = (t.lat != null && t.lon != null)
     ? `<a class="sekundar" href="https://www.google.com/maps?q=${t.lat},${t.lon}" target="_blank" rel="noopener">Karta</a>` : "";
-  const stang = inloggad() ? `<button class="stang" data-id="${esc(t.id)}" title="Ta bort">×</button>` : "";
   return `<div class="hus">
-    ${t.uppfyller ? '<span class="badge">Träff</span>' : ''}${stang}${foto}
+    ${t.uppfyller ? '<span class="badge">Träff</span>' : ''}
+    <button class="hjarta ${arFav(t.id) ? 'fylld' : ''}" data-id="${esc(t.id)}" title="Spara"><svg viewBox="0 0 24 24"><use href="#i-heart"/></svg></button>
+    ${foto}
     <div class="kropp">
       <div class="pris">${esc(pris)}</div>
       <div class="titel">${esc(t.typ || "Bostad")}${t.omrade ? " i " + esc(t.omrade) : ""}</div>
@@ -337,21 +362,13 @@ function kortHtml(t) {
       <div class="foot"><a href="${esc(t.url)}" target="_blank" rel="noopener">Öppna annons</a>${karta}</div>
     </div></div>`;
 }
-async function taBort(id) {
-  if (!inloggad()) return;
-  try {
-    const { json } = await hamtaFil("data/traffar.json");
-    await skrivFil("data/traffar.json", (json ?? []).filter(t => t.id !== id), "Ta bort bostad via panelen");
-    laddaTraffar();
-  } catch (e) { alert("Kunde inte ta bort: " + e.message); }
-}
-function spara() {
-  const url = $("fSparaUrl").value.trim(), st = $("sparaStatus");
-  if (!/hemnet\.se\/bostad\//.test(url)) { st.textContent = "Klistra in en Hemnet-annonslänk (hemnet.se/bostad/…)."; st.className = "status err"; return; }
-  if (!inloggad()) { st.textContent = "Logga in under Inställningar för att spara bostäder."; st.className = "status err"; bytFlik("installningar"); return; }
-  korWorkflow("analysera.yml", "sparaBtn", "Sparar … huset dyker upp i listan om någon minut.", { url }, "sparaStatus");
-  $("fSparaUrl").value = "";
-}
+// Hjärt-klick fungerar i båda gallerierna, ingen inloggning krävs
+document.addEventListener("click", (e) => {
+  const btn = e.target.closest(".hjarta");
+  if (!btn) return;
+  vaxlaFav(btn.dataset.id);
+  if (!document.querySelector(".tabpanel[data-panel=sparade]").classList.contains("hidden")) renderaSparade();
+});
 
 // ---- Inställningar ----
 for (const [range, out, fmt] of [["fHallplats","oHallplats",meter],["fVatten","oVatten",meter],["fSkog","oSkog",meter],["fGrannar","oGrannar",String]])
@@ -450,8 +467,6 @@ $("loginBtn").addEventListener("click", () => { token = $("tokenInput").value.tr
 $("tokenInput").addEventListener("keydown", e => { if (e.key === "Enter") $("loginBtn").click(); });
 $("logoutBtn").addEventListener("click", () => { localStorage.removeItem("bv_token"); token = ""; clearInterval(runsTimer); $("tokenInput").value = ""; uppdateraInloggUI(); laddaTraffar(); });
 $("uppdateraBtn").addEventListener("click", laddaTraffar);
-$("sparaBtn").addEventListener("click", spara);
-$("fSparaUrl").addEventListener("keydown", e => { if (e.key === "Enter") spara(); });
 $("saveBtn").addEventListener("click", sparaConfig);
 $("reloadBtn").addEventListener("click", async () => { await laddaConfig(); $("saveStatus").textContent = "Omläst från GitHub."; $("saveStatus").className = "status ok"; });
 $("testBtn").addEventListener("click", () => korWorkflow("test.yml", "testBtn", "Testnotis på väg – kolla mobilen om cirka 30 sekunder."));
@@ -459,6 +474,7 @@ $("runBtn").addEventListener("click", () => korWorkflow("bostadsvakt.yml", "runB
 
 // Start: visa Bostäder direkt (ingen inloggning krävs)
 uppdateraInloggUI();
+uppdateraSparadeRakn();
 if (inloggad()) loggaIn();
 laddaTraffar();
 </script>
