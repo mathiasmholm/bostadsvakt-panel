@@ -259,7 +259,7 @@
 // Bumpas vid varje paneländring. Server-jobbet skriver senaste numret till
 // bostadsvakt-version.txt; matchar det inte laddar panelen om sig själv en
 // gång med rätt version – så cachen löser sig utan att man rör ?v= manuellt.
-const PANEL_VERSION = "8";
+const PANEL_VERSION = "9";
 (async () => {
   try {
     const r = await fetch(`bostadsvakt-version.txt?t=${Date.now()}`, { cache: "no-store" });
@@ -309,7 +309,7 @@ for (const tab of document.querySelectorAll(".tab")) {
     document.querySelectorAll(".tab").forEach(t => t.classList.toggle("aktiv", t === tab));
     document.querySelectorAll(".tabpanel").forEach(p => p.classList.toggle("hidden", p.dataset.panel !== tab.dataset.tab));
     if (tab.dataset.tab === "bostader") laddaTraffar();
-    if (tab.dataset.tab === "sparade") renderaSparade();
+    if (tab.dataset.tab === "sparade") laddaListor().then(renderaSparade);
     if (tab.dataset.tab === "installningar" && inloggad()) laddaKorningar();
   });
 }
@@ -323,35 +323,76 @@ function relTid(iso) {
   if (s < 86400) return `${Math.round(s / 3600)} tim sedan`;
   return new Date(iso).toLocaleDateString("sv-SE", { day: "numeric", month: "short" });
 }
-// Favoriter (hjärtan) och dolda hus sparas lokalt i webbläsaren – ingen inloggning behövs.
-const FAV = "bv_favoriter";
-const DOLDA = "bv_dolda";
-let aktuella = {}; // id -> hus i Bostäder-flödet (för hjärt-/dölj-uppslag)
-let flodet = [];   // senast hämtade hus
+// Delade listor (favoriter + dolda) lagras i GitHub så att du och Ellinor ser
+// samma. Att titta kräver ingen inloggning (lokal fil via serverjobbet), men
+// att hjärta/dölja skriver till GitHub och kräver inloggning.
+const LOKAL_LISTOR = "bostadsvakt-listor.json";
+let listor = { favoriter: {}, dolda: [] };
+let aktuella = {}; // id -> hus i flödet (för uppslag när man hjärtar)
+let flodet = [];
 let visaDolda = false;
-function lasFav() { try { return JSON.parse(localStorage.getItem(FAV)) || {}; } catch { return {}; } }
-function sparaFav(f) { localStorage.setItem(FAV, JSON.stringify(f)); }
-function arFav(id) { return Object.prototype.hasOwnProperty.call(lasFav(), id); }
-function uppdateraSparadeRakn() { const n = Object.keys(lasFav()).length; $("sparadeRakn").textContent = n ? `(${n})` : ""; }
-function vaxlaFav(id) {
-  const f = lasFav();
-  if (f[id]) delete f[id];
-  else { const hus = aktuella[id] || f[id]; if (hus) f[id] = { ...hus, sparadTid: new Date().toISOString() }; }
-  sparaFav(f);
-  uppdateraSparadeRakn();
-  for (const b of document.querySelectorAll(`.hjarta[data-id="${id}"]`)) b.classList.toggle("fylld", arFav(id));
+
+function normaliseraListor(d) {
+  return { favoriter: (d && d.favoriter) || {}, dolda: (d && Array.isArray(d.dolda) ? d.dolda : []) };
 }
-function lasDolda() { try { return new Set(JSON.parse(localStorage.getItem(DOLDA)) || []); } catch { return new Set(); } }
-function vaxlaDold(id) {
-  const s = lasDolda();
-  if (s.has(id)) s.delete(id); else s.add(id);
-  localStorage.setItem(DOLDA, JSON.stringify([...s]));
-  renderaBostader();
+function arFav(id) { return Object.prototype.hasOwnProperty.call(listor.favoriter, id); }
+function arDold(id) { return listor.dolda.includes(id); }
+function uppdateraSparadeRakn() { const n = Object.keys(listor.favoriter).length; $("sparadeRakn").textContent = n ? `(${n})` : ""; }
+
+async function laddaListor() {
+  let data = null;
+  if (inloggad()) { try { data = (await hamtaFil("data/listor.json")).json; } catch {} }
+  if (!data) {
+    try { const r = await fetch(`${LOKAL_LISTOR}?t=${Date.now()}`, { cache: "no-store" }); if (r.ok) data = await r.json(); } catch {}
+  }
+  listor = normaliseraListor(data);
+  uppdateraSparadeRakn();
+}
+
+// Läser färskt, tillämpar en enskild ändring, skriver med sha. Vid konflikt
+// (någon annan hann skriva) görs om – så bådas ändringar bevaras.
+async function muteraListor(fn) {
+  for (let i = 0; i < 3; i++) {
+    let sha = null, aktuell = { favoriter: {}, dolda: [] };
+    try { const f = await hamtaFil("data/listor.json"); sha = f.sha; aktuell = normaliseraListor(f.json); } catch {}
+    fn(aktuell);
+    const res = await fetch(`${API}/contents/data/listor.json`, {
+      method: "PUT", headers: hdrs(),
+      body: JSON.stringify({ message: "Uppdatera delade listor via panelen", content: b64encode(JSON.stringify(aktuell, null, 2) + "\n"), sha: sha ?? undefined, branch: "main" }),
+    });
+    if (res.ok) { listor = aktuell; return; }
+    if (res.status !== 409) throw new Error(`GitHub svarade ${res.status}`);
+  }
+  throw new Error("för många samtidiga ändringar, försök igen");
+}
+function kravInlogg() {
+  if (inloggad()) return true;
+  $("sparaStatusGlobal") && ($("sparaStatusGlobal").textContent = "");
+  alert("Logga in under Inställningar för att spara eller dölja hus – då syns det för er båda.");
+  bytFlik("installningar");
+  return false;
+}
+async function vaxlaFav(id) {
+  if (!kravInlogg()) return;
+  const hus = aktuella[id] || listor.favoriter[id];
+  try {
+    await muteraListor(l => { if (l.favoriter[id]) delete l.favoriter[id]; else if (hus) l.favoriter[id] = { ...hus, sparadTid: new Date().toISOString() }; });
+    uppdateraSparadeRakn();
+    for (const b of document.querySelectorAll(`.hjarta[data-id="${id}"]`)) b.classList.toggle("fylld", arFav(id));
+    if (!document.querySelector(".tabpanel[data-panel=sparade]").classList.contains("hidden")) renderaSparade();
+  } catch (e) { alert("Kunde inte spara: " + e.message); }
+}
+async function vaxlaDold(id) {
+  if (!kravInlogg()) return;
+  try {
+    await muteraListor(l => { const i = l.dolda.indexOf(id); if (i >= 0) l.dolda.splice(i, 1); else l.dolda.push(id); });
+    renderaBostader();
+  } catch (e) { alert("Kunde inte dölja: " + e.message); }
 }
 
 async function laddaTraffar() {
+  await laddaListor();
   let lista = null;
-  // Inloggad → hämta färskt från GitHub. Annars → lokal fil (ingen inloggning, bakom VPN).
   if (inloggad()) { try { lista = (await hamtaFil("data/traffar.json")).json ?? []; } catch {} }
   if (lista === null) {
     try { const r = await fetch(`${LOKAL_TRAFFAR}?t=${Date.now()}`, { cache: "no-store" }); if (r.ok) lista = await r.json(); } catch {}
@@ -365,10 +406,9 @@ async function laddaTraffar() {
   renderaBostader();
 }
 function renderaBostader() {
-  const dolda = lasDolda();
   aktuella = Object.fromEntries(flodet.map(t => [t.id, t]));
-  const antalDolda = flodet.filter(t => dolda.has(t.id)).length;
-  const synliga = visaDolda ? flodet : flodet.filter(t => !dolda.has(t.id));
+  const antalDolda = flodet.filter(t => arDold(t.id)).length;
+  const synliga = visaDolda ? flodet : flodet.filter(t => !arDold(t.id));
   $("traffInfo").textContent = synliga.length ? `${synliga.length} hus` : "";
   $("tomtLage").classList.toggle("hidden", synliga.length > 0);
   $("galleri").innerHTML = synliga.map(t => kortHtml(t, { dolj: true })).join("");
@@ -379,7 +419,7 @@ function renderaBostader() {
   } else { toggle.style.display = "none"; }
 }
 function renderaSparade() {
-  const lista = Object.values(lasFav()).sort((a, b) => (b.sparadTid ?? "").localeCompare(a.sparadTid ?? ""));
+  const lista = Object.values(listor.favoriter).sort((a, b) => (b.sparadTid ?? "").localeCompare(a.sparadTid ?? ""));
   $("sparadeInfo").textContent = lista.length ? `${lista.length} sparade bostäder` : "";
   $("sparadeTomt").classList.toggle("hidden", lista.length > 0);
   $("sparadeGalleri").innerHTML = lista.map(t => kortHtml(t, { dolj: false })).join("");
@@ -391,7 +431,7 @@ function kortHtml(t, { dolj = false } = {}) {
   const foto = t.bild
     ? `<img class="foto" src="${esc(t.bild)}" loading="lazy" onerror="this.classList.add('saknas');this.removeAttribute('src');this.textContent='Ingen bild'">`
     : `<div class="foto saknas">Ingen bild</div>`;
-  const dold = dolj && lasDolda().has(t.id);
+  const dold = dolj && arDold(t.id);
   const doljBtn = dolj
     ? `<button class="dolj" data-id="${esc(t.id)}" title="${dold ? "Återställ" : "Dölj – inte relevant"}">${dold ? "↺" : "×"}</button>`
     : "";
@@ -410,14 +450,11 @@ function kortHtml(t, { dolj = false } = {}) {
       <div class="foot"><a href="${esc(t.url)}" target="_blank" rel="noopener">Öppna annons</a></div>
     </div></div>`;
 }
-// Hjärt- och dölj-klick fungerar i gallerierna, ingen inloggning krävs
 document.addEventListener("click", (e) => {
   const dolj = e.target.closest(".dolj");
   if (dolj) { vaxlaDold(dolj.dataset.id); return; }
   const btn = e.target.closest(".hjarta");
-  if (!btn) return;
-  vaxlaFav(btn.dataset.id);
-  if (!document.querySelector(".tabpanel[data-panel=sparade]").classList.contains("hidden")) renderaSparade();
+  if (btn) vaxlaFav(btn.dataset.id);
 });
 $("doldaToggle").addEventListener("click", () => { visaDolda = !visaDolda; renderaBostader(); });
 
