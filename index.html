@@ -93,6 +93,8 @@
   .hus .poang .bar { width:60px; height:5px; border-radius:99px; background:var(--surface2); overflow:hidden; flex-shrink:0; }
   .hus .poang .bar i { display:block; height:100%; border-radius:99px; background:linear-gradient(90deg,#f87171,#fbbf24,#34d399); }
   .hus .poang b { color:var(--text); font-variant-numeric:tabular-nums; }
+  .hus .omdome { font-size:.83rem; font-style:italic; color:var(--text); opacity:.9; line-height:1.5;
+    margin:2px 0 8px; padding-left:10px; border-left:2px solid var(--border); }
   .hus .hjarta { position:absolute; top:8px; right:8px; width:34px; height:34px; padding:0; border-radius:50%;
     background:rgba(0,0,0,.5); color:#fff; display:flex; align-items:center; justify-content:center; transition:transform .1s; }
   .hus .hjarta:hover { transform:scale(1.12); background:rgba(0,0,0,.6); }
@@ -272,7 +274,7 @@
 // servern (förbi cachen), läser numret ur den och laddar om sig själv en
 // gång om servern har en nyare version. Ingen separat hjälpfil att glömma
 // uppdatera – bara panelfilen själv avgör.
-const PANEL_VERSION = "13";
+const PANEL_VERSION = "14";
 (async () => {
   try {
     const r = await fetch(`bostadsvakt.html?t=${Date.now()}`, { cache: "no-store" });
@@ -478,6 +480,7 @@ function kortHtml(t, { dolj = false } = {}) {
       <div class="adress">${esc(t.adress)}</div>
       <div class="fakta">${esc(fakta)}</div>
       ${poangHtml}
+      ${t.aiOmdome ? `<div class="omdome">${esc(t.aiOmdome)}</div>` : ""}
       <div class="detalj">${detaljer}</div>
       <div class="tid">${esc(t.kalla || "")}${t.tidpunkt ? " · " + relTid(t.tidpunkt) : ""}</div>
       <textarea class="anteckning" data-id="${esc(t.id)}" placeholder="Anteckning …" rows="1">${esc(anteckning)}</textarea>
