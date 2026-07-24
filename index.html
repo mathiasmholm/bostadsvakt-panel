@@ -256,18 +256,20 @@
 </div>
 
 <script>
-// Bumpas vid varje paneländring. Server-jobbet skriver senaste numret till
-// bostadsvakt-version.txt; matchar det inte laddar panelen om sig själv en
-// gång med rätt version – så cachen löser sig utan att man rör ?v= manuellt.
-const PANEL_VERSION = "9";
+// Bumpas vid varje paneländring. Panelen hämtar sin EGEN fil färskt från
+// servern (förbi cachen), läser numret ur den och laddar om sig själv en
+// gång om servern har en nyare version. Ingen separat hjälpfil att glömma
+// uppdatera – bara panelfilen själv avgör.
+const PANEL_VERSION = "10";
 (async () => {
   try {
-    const r = await fetch(`bostadsvakt-version.txt?t=${Date.now()}`, { cache: "no-store" });
+    const r = await fetch(`bostadsvakt.html?t=${Date.now()}`, { cache: "no-store" });
     if (!r.ok) return;
-    const senaste = (await r.text()).trim();
+    const html = await r.text();
+    const serverVer = html.match(/const PANEL_VERSION = "(\d+)"/)?.[1];
     const nuvarande = new URLSearchParams(location.search).get("v");
-    if (senaste && senaste !== PANEL_VERSION && senaste !== nuvarande) {
-      location.replace(`bostadsvakt.html?v=${encodeURIComponent(senaste)}`);
+    if (serverVer && serverVer !== PANEL_VERSION && serverVer !== nuvarande) {
+      location.replace(`bostadsvakt.html?v=${serverVer}`);
     }
   } catch {}
 })();
