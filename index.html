@@ -252,7 +252,7 @@
 // Bumpas vid varje paneländring. Server-jobbet skriver senaste numret till
 // bostadsvakt-version.txt; matchar det inte laddar panelen om sig själv en
 // gång med rätt version – så cachen löser sig utan att man rör ?v= manuellt.
-const PANEL_VERSION = "6";
+const PANEL_VERSION = "7";
 (async () => {
   try {
     const r = await fetch(`bostadsvakt-version.txt?t=${Date.now()}`, { cache: "no-store" });
@@ -362,8 +362,6 @@ function kortHtml(t) {
   const foto = t.bild
     ? `<img class="foto" src="${esc(t.bild)}" loading="lazy" onerror="this.classList.add('saknas');this.removeAttribute('src');this.textContent='Ingen bild'">`
     : `<div class="foto saknas">Ingen bild</div>`;
-  const karta = (t.lat != null && t.lon != null)
-    ? `<a class="sekundar" href="https://www.google.com/maps?q=${t.lat},${t.lon}" target="_blank" rel="noopener">Karta</a>` : "";
   return `<div class="hus">
     ${t.uppfyller ? '<span class="badge">Träff</span>' : ''}
     <button class="hjarta ${arFav(t.id) ? 'fylld' : ''}" data-id="${esc(t.id)}" title="Spara"><svg viewBox="0 0 24 24"><use href="#i-heart"/></svg></button>
@@ -375,7 +373,7 @@ function kortHtml(t) {
       <div class="fakta">${esc(fakta)}</div>
       <div class="detalj">${detaljer}</div>
       <div class="tid">${esc(t.kalla || "")}${t.tidpunkt ? " · " + relTid(t.tidpunkt) : ""}</div>
-      <div class="foot"><a href="${esc(t.url)}" target="_blank" rel="noopener">Öppna annons</a>${karta}</div>
+      <div class="foot"><a href="${esc(t.url)}" target="_blank" rel="noopener">Öppna annons</a></div>
     </div></div>`;
 }
 // Hjärt-klick fungerar i båda gallerierna, ingen inloggning krävs
