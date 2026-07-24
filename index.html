@@ -5,6 +5,7 @@
 <meta name="viewport" content="width=device-width, initial-scale=1">
 <title>Bostadsvakt</title>
 <link rel="icon" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24' fill='none' stroke='%234f7cff' stroke-width='2'%3E%3Cpath d='M3 10.5 12 3l9 7.5'/%3E%3Cpath d='M5 9.5V21h14V9.5'/%3E%3C/svg%3E">
+<link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css" integrity="sha256-p4NxAoJBhIIN+hmNHrzRCf9tD/miZyoHS5obTRR9BMY=" crossorigin="">
 <style>
   :root {
     --bg:#0b0e14; --surface:#12161f; --surface2:#1a2029; --border:#232a36;
@@ -88,6 +89,10 @@
   .hus .foot a { flex:1; text-align:center; text-decoration:none; font-size:.82rem; font-weight:600; padding:8px; border-radius:8px; background:var(--accent); color:#fff; }
   .hus .foot a.sekundar { background:var(--surface2); color:var(--text); border:1px solid var(--border); }
   .hus .badge { position:absolute; top:10px; left:10px; font-size:.72rem; font-weight:700; padding:3px 9px; border-radius:99px; background:var(--ok); color:#04120c; }
+  .hus .poang { display:inline-flex; align-items:center; gap:6px; font-size:.78rem; color:var(--muted); margin:2px 0 6px; }
+  .hus .poang .bar { width:60px; height:5px; border-radius:99px; background:var(--surface2); overflow:hidden; flex-shrink:0; }
+  .hus .poang .bar i { display:block; height:100%; border-radius:99px; background:linear-gradient(90deg,#f87171,#fbbf24,#34d399); }
+  .hus .poang b { color:var(--text); font-variant-numeric:tabular-nums; }
   .hus .hjarta { position:absolute; top:8px; right:8px; width:34px; height:34px; padding:0; border-radius:50%;
     background:rgba(0,0,0,.5); color:#fff; display:flex; align-items:center; justify-content:center; transition:transform .1s; }
   .hus .hjarta:hover { transform:scale(1.12); background:rgba(0,0,0,.6); }
@@ -99,6 +104,9 @@
   .hus .dolj:hover { background:rgba(0,0,0,.65); }
   .hus.ardold { opacity:.5; }
   .hus .tid { font-size:.72rem; color:var(--muted); margin-top:8px; }
+  .hus .anteckning { width:100%; margin-top:8px; padding:7px 9px; border-radius:8px; border:1px solid var(--border);
+    background:var(--surface2); color:var(--text); font:inherit; font-size:.82rem; resize:vertical; min-height:32px; }
+  .hus .anteckning:focus-visible { outline:2px solid var(--accent); outline-offset:1px; }
   .tomt { text-align:center; color:var(--muted); padding:48px 20px; font-size:.92rem; }
 
   .hint { font-size:.8rem; color:var(--muted); margin-top:12px; }
@@ -156,8 +164,12 @@
       <span id="traffInfo"></span>
       <a id="doldaToggle" class="hint" style="margin-left:10px; display:none"></a>
     </div>
-    <button class="ghost" id="uppdateraBtn" style="padding:6px 12px; font-size:.8rem">Uppdatera</button>
+    <div class="row" style="margin:0">
+      <button class="ghost" id="visaKartaBtn" style="padding:6px 12px; font-size:.8rem">Karta</button>
+      <button class="ghost" id="uppdateraBtn" style="padding:6px 12px; font-size:.8rem">Uppdatera</button>
+    </div>
   </div>
+  <div id="kartaContainer" class="hidden" style="height:360px; border-radius:var(--r); overflow:hidden; margin-top:16px; border:1px solid var(--border)"></div>
   <div class="galleri" id="galleri"></div>
   <div class="tomt hidden" id="tomtLage">
     Inga bostäder än. Bevakningen fyller den här listan varje morgon med hus den hittar i dina områden.
@@ -260,7 +272,7 @@
 // servern (förbi cachen), läser numret ur den och laddar om sig själv en
 // gång om servern har en nyare version. Ingen separat hjälpfil att glömma
 // uppdatera – bara panelfilen själv avgör.
-const PANEL_VERSION = "11";
+const PANEL_VERSION = "13";
 (async () => {
   try {
     const r = await fetch(`bostadsvakt.html?t=${Date.now()}`, { cache: "no-store" });
@@ -329,13 +341,17 @@ function relTid(iso) {
 // samma. Att titta kräver ingen inloggning (lokal fil via serverjobbet), men
 // att hjärta/dölja skriver till GitHub och kräver inloggning.
 const LOKAL_LISTOR = "bostadsvakt-listor.json";
-let listor = { favoriter: {}, dolda: [] };
+let listor = { favoriter: {}, dolda: [], anteckningar: {} };
 let aktuella = {}; // id -> hus i flödet (för uppslag när man hjärtar)
 let flodet = [];
 let visaDolda = false;
 
 function normaliseraListor(d) {
-  return { favoriter: (d && d.favoriter) || {}, dolda: (d && Array.isArray(d.dolda) ? d.dolda : []) };
+  return {
+    favoriter: (d && d.favoriter) || {},
+    dolda: (d && Array.isArray(d.dolda) ? d.dolda : []),
+    anteckningar: (d && d.anteckningar) || {},
+  };
 }
 function arFav(id) { return Object.prototype.hasOwnProperty.call(listor.favoriter, id); }
 function arDold(id) { return listor.dolda.includes(id); }
@@ -355,7 +371,7 @@ async function laddaListor() {
 // (någon annan hann skriva) görs om – så bådas ändringar bevaras.
 async function muteraListor(fn) {
   for (let i = 0; i < 3; i++) {
-    let sha = null, aktuell = { favoriter: {}, dolda: [] };
+    let sha = null, aktuell = { favoriter: {}, dolda: [], anteckningar: {} };
     try { const f = await hamtaFil("data/listor.json"); sha = f.sha; aktuell = normaliseraListor(f.json); } catch {}
     fn(aktuell);
     const res = await fetch(`${API}/contents/data/listor.json`, {
@@ -391,6 +407,15 @@ async function vaxlaDold(id) {
     renderaBostader();
   } catch (e) { alert("Kunde inte dölja: " + e.message); }
 }
+async function sparaAnteckning(id, text, statusEl) {
+  if (!inloggad()) { if (statusEl) statusEl.textContent = "Logga in för att spara anteckningar."; return; }
+  try {
+    await muteraListor(l => {
+      if (text.trim()) l.anteckningar[id] = text; else delete l.anteckningar[id];
+    });
+    if (statusEl) { statusEl.textContent = "Sparat"; setTimeout(() => { if (statusEl.textContent === "Sparat") statusEl.textContent = ""; }, 1500); }
+  } catch (e) { if (statusEl) statusEl.textContent = "Kunde inte spara: " + e.message; }
+}
 
 async function laddaTraffar() {
   await laddaListor();
@@ -419,6 +444,7 @@ function renderaBostader() {
     toggle.style.display = "";
     toggle.textContent = visaDolda ? "Dölj dolda igen" : `Visa dolda (${antalDolda})`;
   } else { toggle.style.display = "none"; }
+  if (!$("kartaContainer").classList.contains("hidden")) visaKarta(synliga);
 }
 function renderaSparade() {
   const lista = Object.values(listor.favoriter).sort((a, b) => (b.sparadTid ?? "").localeCompare(a.sparadTid ?? ""));
@@ -437,6 +463,10 @@ function kortHtml(t, { dolj = false } = {}) {
   const doljBtn = dolj
     ? `<button class="dolj" data-id="${esc(t.id)}" title="${dold ? "Återställ" : "Dölj – inte relevant"}">${dold ? "↺" : "×"}</button>`
     : "";
+  const poangHtml = t.poang != null
+    ? `<div class="poang">Matchning <b>${t.poang}</b>/100 <span class="bar"><i style="width:${t.poang}%"></i></span></div>`
+    : "";
+  const anteckning = listor.anteckningar?.[t.id] ?? "";
   return `<div class="hus${dold ? " ardold" : ""}">
     ${t.uppfyller ? '<span class="badge">Träff</span>' : ''}
     <button class="hjarta ${arFav(t.id) ? 'fylld' : ''}" data-id="${esc(t.id)}" title="Spara"><svg viewBox="0 0 24 24"><use href="#i-heart"/></svg></button>
@@ -447,8 +477,11 @@ function kortHtml(t, { dolj = false } = {}) {
       <div class="titel">${esc(t.typ || "Bostad")}${t.omrade ? " i " + esc(t.omrade) : ""}</div>
       <div class="adress">${esc(t.adress)}</div>
       <div class="fakta">${esc(fakta)}</div>
+      ${poangHtml}
       <div class="detalj">${detaljer}</div>
       <div class="tid">${esc(t.kalla || "")}${t.tidpunkt ? " · " + relTid(t.tidpunkt) : ""}</div>
+      <textarea class="anteckning" data-id="${esc(t.id)}" placeholder="Anteckning …" rows="1">${esc(anteckning)}</textarea>
+      <span class="anteckningStatus" style="font-size:.72rem;color:var(--muted)"></span>
       <div class="foot"><a href="${esc(t.url)}" target="_blank" rel="noopener">Öppna annons</a></div>
     </div></div>`;
 }
@@ -458,7 +491,71 @@ document.addEventListener("click", (e) => {
   const btn = e.target.closest(".hjarta");
   if (btn) vaxlaFav(btn.dataset.id);
 });
+document.addEventListener("focusout", (e) => {
+  const ta = e.target.closest?.(".anteckning");
+  if (!ta) return;
+  const statusEl = ta.parentElement.querySelector(".anteckningStatus");
+  if (!inloggad()) { if (statusEl) statusEl.textContent = "Logga in för att spara anteckningar."; return; }
+  if (statusEl) statusEl.textContent = "Sparar …";
+  sparaAnteckning(ta.dataset.id, ta.value, statusEl);
+});
 $("doldaToggle").addEventListener("click", () => { visaDolda = !visaDolda; renderaBostader(); });
+
+// ---- Karta (Leaflet, laddas först när kartan öppnas) ----
+let kartaInstans = null, kartaMarkorer = [], leafletLaddad = null;
+function laddaLeaflet() {
+  if (leafletLaddad) return leafletLaddad;
+  leafletLaddad = new Promise((resolve, reject) => {
+    const s = document.createElement("script");
+    s.src = "https://unpkg.com/leaflet@1.9.4/dist/leaflet.js";
+    s.integrity = "sha256-20nQCchB9co0qIjJZRGuk2/Z9VM+kNiyxNV1lvTlZBo=";
+    s.crossOrigin = "";
+    s.onload = resolve; s.onerror = reject;
+    document.head.appendChild(s);
+  });
+  return leafletLaddad;
+}
+async function visaKarta(hus) {
+  await laddaLeaflet();
+  const container = $("kartaContainer");
+  if (!kartaInstans) {
+    kartaInstans = L.map(container).setView([59.85, 18.0], 9);
+    L.tileLayer("https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png", {
+      attribution: "© OpenStreetMap-bidragsgivare", maxZoom: 18,
+    }).addTo(kartaInstans);
+  } else {
+    setTimeout(() => kartaInstans.invalidateSize(), 0);
+  }
+  for (const m of kartaMarkorer) kartaInstans.removeLayer(m);
+  kartaMarkorer = [];
+  const punkter = hus.filter((t) => t.lat != null && t.lon != null);
+  for (const t of punkter) {
+    const farg = t.uppfyller ? "#34d399" : "#4f7cff";
+    const ikon = L.divIcon({
+      className: "", html: `<div style="width:14px;height:14px;border-radius:50%;background:${farg};border:2px solid #fff;box-shadow:0 0 0 1px rgba(0,0,0,.3)"></div>`,
+      iconSize: [14, 14], iconAnchor: [7, 7],
+    });
+    const m = L.marker([t.lat, t.lon], { icon: ikon }).addTo(kartaInstans);
+    const pris = t.pris ? t.pris.toLocaleString("sv-SE") + " kr" : "Pris ej satt";
+    m.bindPopup(`<strong>${esc(t.adress)}</strong><br>${esc(pris)}${t.poang != null ? " · " + t.poang + "/100" : ""}<br><a href="${esc(t.url)}" target="_blank" rel="noopener">Öppna annons</a>`);
+    kartaMarkorer.push(m);
+  }
+  if (punkter.length) {
+    kartaInstans.fitBounds(L.latLngBounds(punkter.map((t) => [t.lat, t.lon])).pad(0.2), { maxZoom: 13 });
+  }
+}
+$("visaKartaBtn").addEventListener("click", async () => {
+  const visasNu = !$("kartaContainer").classList.contains("hidden");
+  if (visasNu) {
+    $("kartaContainer").classList.add("hidden");
+    $("visaKartaBtn").textContent = "Karta";
+  } else {
+    $("visaKartaBtn").textContent = "Lista";
+    $("kartaContainer").classList.remove("hidden");
+    const dolda = new Set(listor.dolda);
+    await visaKarta(visaDolda ? flodet : flodet.filter((t) => !dolda.has(t.id)));
+  }
+});
 
 // ---- Inställningar ----
 for (const [range, out, fmt] of [["fHallplats","oHallplats",meter],["fVatten","oVatten",meter],["fSkog","oSkog",meter],["fGrannar","oGrannar",String]])
