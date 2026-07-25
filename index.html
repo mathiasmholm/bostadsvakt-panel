@@ -85,6 +85,7 @@
   .hus .adress { font-weight:600; margin-top:2px; }
   .hus .fakta { font-size:.82rem; color:var(--muted); margin:4px 0 8px; }
   .hus .detalj { font-size:.8rem; color:var(--muted); line-height:1.5; }
+  .hus .detalj .varning { color:var(--warn); font-weight:600; }
   .hus .foot { margin-top:auto; padding-top:12px; display:flex; gap:8px; }
   .hus .foot a { flex:1; text-align:center; text-decoration:none; font-size:.82rem; font-weight:600; padding:8px; border-radius:8px; background:var(--accent); color:#fff; }
   .hus .foot a.sekundar { background:var(--surface2); color:var(--text); border:1px solid var(--border); }
@@ -274,7 +275,7 @@
 // servern (förbi cachen), läser numret ur den och laddar om sig själv en
 // gång om servern har en nyare version. Ingen separat hjälpfil att glömma
 // uppdatera – bara panelfilen själv avgör.
-const PANEL_VERSION = "14";
+const PANEL_VERSION = "15";
 (async () => {
   try {
     const r = await fetch(`bostadsvakt.html?t=${Date.now()}`, { cache: "no-store" });
@@ -457,7 +458,10 @@ function renderaSparade() {
 function kortHtml(t, { dolj = false } = {}) {
   const pris = t.pris ? t.pris.toLocaleString("sv-SE") + " kr" : "Pris ej satt";
   const fakta = [t.rum && `${t.rum} rum`, t.boarea && `${t.boarea} m²`, t.tomtarea && `tomt ${t.tomtarea} m²`].filter(Boolean).join(" · ");
-  const detaljer = [...(t.pendling ?? []), ...(t.omgivning ?? [])].map(esc).join("<br>");
+  const detaljer = [...(t.pendling ?? []), ...(t.omgivning ?? [])]
+    .map(esc)
+    .map((rad) => rad.startsWith("⚠") ? `<span class="varning">${rad}</span>` : rad)
+    .join("<br>");
   const foto = t.bild
     ? `<img class="foto" src="${esc(t.bild)}" loading="lazy" onerror="this.classList.add('saknas');this.removeAttribute('src');this.textContent='Ingen bild'">`
     : `<div class="foto saknas">Ingen bild</div>`;
