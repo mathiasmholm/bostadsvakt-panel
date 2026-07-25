@@ -75,6 +75,13 @@
   .status.ok { color:var(--ok); } .status.err { color:var(--err); }
 
   .galleri { display:grid; grid-template-columns:repeat(auto-fill,minmax(250px,1fr)); gap:16px; margin-top:20px; }
+  @media (max-width:600px) {
+    /* På mobil blir galleriet en swipe-karusell (en bostad i taget) istället
+       för en vertikal lista – scroll-snap ger native touch-swipe utan JS. */
+    .galleri { display:flex; overflow-x:auto; scroll-snap-type:x mandatory;
+      -webkit-overflow-scrolling:touch; margin:20px -20px 0; padding:0 20px 10px; }
+    .galleri .hus { flex:0 0 100%; scroll-snap-align:center; }
+  }
   .hus { background:var(--surface); border:1px solid var(--border); border-radius:var(--r); overflow:hidden;
     display:flex; flex-direction:column; position:relative; }
   .hus .foto { aspect-ratio:16/10; width:100%; object-fit:cover; background:var(--surface2); display:block; }
@@ -170,11 +177,11 @@
       <a id="doldaToggle" class="hint" style="margin-left:10px; display:none"></a>
     </div>
     <div class="row" style="margin:0">
-      <button class="ghost" id="visaKartaBtn" style="padding:6px 12px; font-size:.8rem">Karta</button>
+      <button class="ghost" id="visaKartaBtn" style="padding:6px 12px; font-size:.8rem">Dölj karta</button>
       <button class="ghost" id="uppdateraBtn" style="padding:6px 12px; font-size:.8rem">Uppdatera</button>
     </div>
   </div>
-  <div id="kartaContainer" class="hidden" style="height:360px; border-radius:var(--r); overflow:hidden; margin-top:16px; border:1px solid var(--border)"></div>
+  <div id="kartaContainer" style="height:360px; border-radius:var(--r); overflow:hidden; margin-top:16px; border:1px solid var(--border)"></div>
   <div class="galleri" id="galleri"></div>
   <div class="tomt hidden" id="tomtLage">
     Inga bostäder än. Bevakningen fyller den här listan varje morgon med hus den hittar i dina områden.
@@ -277,7 +284,7 @@
 // servern (förbi cachen), läser numret ur den och laddar om sig själv en
 // gång om servern har en nyare version. Ingen separat hjälpfil att glömma
 // uppdatera – bara panelfilen själv avgör.
-const PANEL_VERSION = "16";
+const PANEL_VERSION = "17";
 (async () => {
   try {
     const r = await fetch(`bostadsvakt.html?t=${Date.now()}`, { cache: "no-store" });
@@ -550,7 +557,10 @@ async function visaKarta(hus) {
     });
     const m = L.marker([t.lat, t.lon], { icon: ikon }).addTo(kartaInstans);
     const pris = t.pris ? t.pris.toLocaleString("sv-SE") + " kr" : "Pris ej satt";
-    m.bindPopup(`<strong>${esc(t.adress)}</strong><br>${esc(pris)}${t.poang != null ? " · " + t.poang + "/100" : ""}<br><a href="${esc(t.url)}" target="_blank" rel="noopener">Öppna annons</a>`);
+    const fotoHtml = t.bild
+      ? `<img src="${esc(t.bild)}" loading="lazy" style="width:100%;max-width:220px;aspect-ratio:16/10;object-fit:cover;border-radius:8px;display:block;margin-bottom:6px">`
+      : "";
+    m.bindPopup(`${fotoHtml}<strong>${esc(t.adress)}</strong><br>${esc(pris)}${t.poang != null ? " · " + t.poang + "/100" : ""}<br><a href="${esc(t.url)}" target="_blank" rel="noopener">Öppna annons</a>`, { maxWidth: 240 });
     kartaMarkorer.push(m);
   }
   if (punkter.length) {
@@ -561,9 +571,9 @@ $("visaKartaBtn").addEventListener("click", async () => {
   const visasNu = !$("kartaContainer").classList.contains("hidden");
   if (visasNu) {
     $("kartaContainer").classList.add("hidden");
-    $("visaKartaBtn").textContent = "Karta";
+    $("visaKartaBtn").textContent = "Visa karta";
   } else {
-    $("visaKartaBtn").textContent = "Lista";
+    $("visaKartaBtn").textContent = "Dölj karta";
     $("kartaContainer").classList.remove("hidden");
     const dolda = new Set(listor.dolda);
     await visaKarta(visaDolda ? flodet : flodet.filter((t) => !dolda.has(t.id)));
