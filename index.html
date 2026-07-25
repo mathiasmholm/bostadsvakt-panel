@@ -89,7 +89,9 @@
   .hus .foot { margin-top:auto; padding-top:12px; display:flex; gap:8px; }
   .hus .foot a { flex:1; text-align:center; text-decoration:none; font-size:.82rem; font-weight:600; padding:8px; border-radius:8px; background:var(--accent); color:#fff; }
   .hus .foot a.sekundar { background:var(--surface2); color:var(--text); border:1px solid var(--border); }
-  .hus .badge { position:absolute; top:10px; left:10px; font-size:.72rem; font-weight:700; padding:3px 9px; border-radius:99px; background:var(--ok); color:#04120c; }
+  .hus .badges { position:absolute; top:10px; left:10px; display:flex; flex-direction:column; align-items:flex-start; gap:4px; }
+  .hus .badge { font-size:.72rem; font-weight:700; padding:3px 9px; border-radius:99px; background:var(--ok); color:#04120c; }
+  .hus .badge.tips { background:var(--accent); color:#fff; }
   .hus .poang { display:inline-flex; align-items:center; gap:6px; font-size:.78rem; color:var(--muted); margin:2px 0 6px; }
   .hus .poang .bar { width:60px; height:5px; border-radius:99px; background:var(--surface2); overflow:hidden; flex-shrink:0; }
   .hus .poang .bar i { display:block; height:100%; border-radius:99px; background:linear-gradient(90deg,#f87171,#fbbf24,#34d399); }
@@ -275,7 +277,7 @@
 // servern (förbi cachen), läser numret ur den och laddar om sig själv en
 // gång om servern har en nyare version. Ingen separat hjälpfil att glömma
 // uppdatera – bara panelfilen själv avgör.
-const PANEL_VERSION = "15";
+const PANEL_VERSION = "16";
 (async () => {
   try {
     const r = await fetch(`bostadsvakt.html?t=${Date.now()}`, { cache: "no-store" });
@@ -473,8 +475,12 @@ function kortHtml(t, { dolj = false } = {}) {
     ? `<div class="poang">Matchning <b>${t.poang}</b>/100 <span class="bar"><i style="width:${t.poang}%"></i></span></div>`
     : "";
   const anteckning = listor.anteckningar?.[t.id] ?? "";
+  const badges = [
+    t.uppfyller ? '<span class="badge">Träff</span>' : '',
+    t.kalla === "Hemnet Max" ? '<span class="badge tips">Hemnet-tips</span>' : '',
+  ].filter(Boolean).join('');
   return `<div class="hus${dold ? " ardold" : ""}">
-    ${t.uppfyller ? '<span class="badge">Träff</span>' : ''}
+    ${badges ? `<div class="badges">${badges}</div>` : ''}
     <button class="hjarta ${arFav(t.id) ? 'fylld' : ''}" data-id="${esc(t.id)}" title="Spara"><svg viewBox="0 0 24 24"><use href="#i-heart"/></svg></button>
     ${doljBtn}
     ${foto}
