@@ -105,6 +105,7 @@
   .hus .poang b { color:var(--text); font-variant-numeric:tabular-nums; }
   .hus .omdome { font-size:.83rem; font-style:italic; color:var(--text); opacity:.9; line-height:1.5;
     margin:2px 0 8px; padding-left:10px; border-left:2px solid var(--border); }
+  .hus .anteckning-ny { font-size:.72rem; color:var(--accent); font-weight:600; margin-top:8px; }
   .hus .prisjmf { font-size:.78rem; color:var(--muted); margin:2px 0 6px; }
   .hus .prisjmf .under { color:var(--ok); font-weight:600; }
   .hus .prisjmf .over { color:var(--warn); font-weight:600; }
@@ -182,6 +183,19 @@
     <div class="row" style="margin:0">
       <button class="ghost" id="visaKartaBtn" style="padding:6px 12px; font-size:.8rem">Dölj karta</button>
       <button class="ghost" id="uppdateraBtn" style="padding:6px 12px; font-size:.8rem">Uppdatera</button>
+    </div>
+  </div>
+  <div class="row" style="justify-content:space-between; margin-top:10px">
+    <div class="row" style="margin:0; gap:14px">
+      <select id="sortVal" style="width:auto; padding:6px 10px; font-size:.8rem">
+        <option value="matchning">Sortera: Matchning</option>
+        <option value="pris-lag">Sortera: Pris, lägst först</option>
+        <option value="pris-hog">Sortera: Pris, högst först</option>
+        <option value="nyast">Sortera: Nyast</option>
+      </select>
+      <label style="display:flex; align-items:center; gap:6px; font-size:.8rem; color:var(--muted); cursor:pointer">
+        <input type="checkbox" id="baraTraffarBox" style="width:auto"> Bara Träffar
+      </label>
     </div>
   </div>
   <div id="kartaContainer" style="height:360px; border-radius:var(--r); overflow:hidden; margin-top:16px; border:1px solid var(--border)"></div>
@@ -287,7 +301,7 @@
 // servern (förbi cachen), läser numret ur den och laddar om sig själv en
 // gång om servern har en nyare version. Ingen separat hjälpfil att glömma
 // uppdatera – bara panelfilen själv avgör.
-const PANEL_VERSION = "20";
+const PANEL_VERSION = "21";
 (async () => {
   try {
     const r = await fetch(`bostadsvakt.html?t=${Date.now()}`, { cache: "no-store" });
@@ -360,6 +374,8 @@ let listor = { favoriter: {}, dolda: [], anteckningar: {} };
 let aktuella = {}; // id -> hus i flödet (för uppslag när man hjärtar)
 let flodet = [];
 let visaDolda = false;
+let sortLage = localStorage.getItem("bv_sort") || "matchning";
+let baraTraffar = localStorage.getItem("bv_bara_traffar") === "1";
 
 function normaliseraListor(d) {
   return {
@@ -370,6 +386,20 @@ function normaliseraListor(d) {
 }
 function arFav(id) { return Object.prototype.hasOwnProperty.call(listor.favoriter, id); }
 function arDold(id) { return listor.dolda.includes(id); }
+// Håller reda på vilken anteckningstext du senast sett per hus, lokalt i din
+// egen webbläsare – så att du kan se om Ellinor (eller du själv i en annan
+// webbläsare) skrivit något nytt sen sist, utan att behöva läsa om alla korten.
+function lastaAnteckningar() {
+  try { return JSON.parse(localStorage.getItem("bv_lasta_anteckningar") || "{}"); } catch { return {}; }
+}
+function markeraAnteckningLast(id, text) {
+  const l = lastaAnteckningar();
+  if (text) l[id] = text; else delete l[id];
+  localStorage.setItem("bv_lasta_anteckningar", JSON.stringify(l));
+}
+function arAnteckningOlast(id, text) {
+  return Boolean(text) && lastaAnteckningar()[id] !== text;
+}
 function uppdateraSparadeRakn() { const n = Object.keys(listor.favoriter).length; $("sparadeRakn").textContent = n ? `(${n})` : ""; }
 
 async function laddaListor() {
@@ -406,6 +436,7 @@ async function vaxlaDold(id) {
 async function sparaAnteckning(id, text, statusEl) {
   try {
     listor = await postaListor("/anteckning", { id, text });
+    markeraAnteckningLast(id, text);
     if (statusEl) { statusEl.textContent = "Sparat"; setTimeout(() => { if (statusEl.textContent === "Sparat") statusEl.textContent = ""; }, 1500); }
   } catch (e) { if (statusEl) statusEl.textContent = "Kunde inte spara: " + e.message; }
 }
@@ -425,10 +456,20 @@ async function laddaTraffar() {
   flodet = lista.filter(t => !t.dold);
   renderaBostader();
 }
+function sorteraFlodet(lista) {
+  const sorterad = [...lista];
+  if (sortLage === "pris-lag") sorterad.sort((a, b) => (a.pris ?? Infinity) - (b.pris ?? Infinity));
+  else if (sortLage === "pris-hog") sorterad.sort((a, b) => (b.pris ?? -Infinity) - (a.pris ?? -Infinity));
+  else if (sortLage === "nyast") sorterad.sort((a, b) => (b.tidpunkt ?? "").localeCompare(a.tidpunkt ?? ""));
+  else sorterad.sort((a, b) => (b.poang ?? -1) - (a.poang ?? -1));
+  return sorterad;
+}
 function renderaBostader() {
   aktuella = Object.fromEntries(flodet.map(t => [t.id, t]));
   const antalDolda = flodet.filter(t => arDold(t.id)).length;
-  const synliga = visaDolda ? flodet : flodet.filter(t => !arDold(t.id));
+  let synliga = visaDolda ? flodet : flodet.filter(t => !arDold(t.id));
+  if (baraTraffar) synliga = synliga.filter(t => t.uppfyller);
+  synliga = sorteraFlodet(synliga);
   $("traffInfo").textContent = synliga.length ? `${synliga.length} hus` : "";
   $("tomtLage").classList.toggle("hidden", synliga.length > 0);
   $("galleri").innerHTML = synliga.map(t => kortHtml(t, { dolj: true })).join("");
@@ -467,6 +508,8 @@ function kortHtml(t, { dolj = false } = {}) {
     ? `<div class="prisjmf">${p.husKvm.toLocaleString("sv-SE")} kr/m² · <span class="${p.diffProcent <= 0 ? "under" : "over"}">${Math.abs(p.diffProcent)}% ${p.diffProcent <= 0 ? "under" : "över"} snittet</span> (${p.antalJamforelser} sålda)</div>`
     : "";
   const anteckning = listor.anteckningar?.[t.id] ?? "";
+  const anteckningOlastHtml = arAnteckningOlast(t.id, anteckning)
+    ? '<div class="anteckning-ny">💬 Ny anteckning</div>' : "";
   const badges = [
     t.uppfyller ? '<span class="badge">Träff</span>' : '',
     t.kalla === "Hemnet Max" ? '<span class="badge tips">Hemnet-tips</span>' : '',
@@ -486,6 +529,7 @@ function kortHtml(t, { dolj = false } = {}) {
       ${t.aiOmdome ? `<div class="omdome">${esc(t.aiOmdome)}</div>` : ""}
       <div class="detalj">${detaljer}</div>
       <div class="tid">${esc(t.kalla || "")}${t.tidpunkt ? " · " + relTid(t.tidpunkt) : ""}</div>
+      ${anteckningOlastHtml}
       <textarea class="anteckning" data-id="${esc(t.id)}" placeholder="Anteckning …" rows="1">${esc(anteckning)}</textarea>
       <span class="anteckningStatus" style="font-size:.72rem;color:var(--muted)"></span>
       <div class="foot"><a href="${esc(t.url)}" target="_blank" rel="noopener">Öppna annons</a></div>
@@ -497,6 +541,12 @@ document.addEventListener("click", (e) => {
   const btn = e.target.closest(".hjarta");
   if (btn) vaxlaFav(btn.dataset.id);
 });
+document.addEventListener("focusin", (e) => {
+  const ta = e.target.closest?.(".anteckning");
+  if (!ta) return;
+  markeraAnteckningLast(ta.dataset.id, listor.anteckningar?.[ta.dataset.id] ?? "");
+  ta.parentElement.querySelector(".anteckning-ny")?.remove();
+});
 document.addEventListener("focusout", (e) => {
   const ta = e.target.closest?.(".anteckning");
   if (!ta) return;
@@ -505,6 +555,10 @@ document.addEventListener("focusout", (e) => {
   sparaAnteckning(ta.dataset.id, ta.value, statusEl);
 });
 $("doldaToggle").addEventListener("click", () => { visaDolda = !visaDolda; renderaBostader(); });
+$("sortVal").value = sortLage;
+$("baraTraffarBox").checked = baraTraffar;
+$("sortVal").addEventListener("change", () => { sortLage = $("sortVal").value; localStorage.setItem("bv_sort", sortLage); renderaBostader(); });
+$("baraTraffarBox").addEventListener("change", () => { baraTraffar = $("baraTraffarBox").checked; localStorage.setItem("bv_bara_traffar", baraTraffar ? "1" : "0"); renderaBostader(); });
 
 // ---- Karta (Leaflet, laddas först när kartan öppnas) ----
 let kartaInstans = null, kartaMarkorer = [], leafletLaddad = null;
