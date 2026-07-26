@@ -99,6 +99,7 @@
   .hus .badges { position:absolute; top:10px; left:10px; display:flex; flex-direction:column; align-items:flex-start; gap:4px; }
   .hus .badge { font-size:.72rem; font-weight:700; padding:3px 9px; border-radius:99px; background:var(--ok); color:#04120c; }
   .hus .badge.tips { background:var(--accent); color:#fff; }
+  .hus .badge.sankt { background:#fff; color:var(--ok); border:1px solid var(--ok); }
   .hus .poang { display:inline-flex; align-items:center; gap:6px; font-size:.78rem; color:var(--muted); margin:2px 0 6px; }
   .hus .poang .bar { width:60px; height:5px; border-radius:99px; background:var(--surface2); overflow:hidden; flex-shrink:0; }
   .hus .poang .bar i { display:block; height:100%; border-radius:99px; background:linear-gradient(90deg,#f87171,#fbbf24,#34d399); }
@@ -109,6 +110,7 @@
   .hus .prisjmf { font-size:.78rem; color:var(--muted); margin:2px 0 6px; }
   .hus .prisjmf .under { color:var(--ok); font-weight:600; }
   .hus .prisjmf .over { color:var(--warn); font-weight:600; }
+  .hus .prissankt { font-size:.78rem; color:var(--ok); font-weight:600; margin:2px 0 6px; }
   .hus .hjarta { position:absolute; top:8px; right:8px; width:34px; height:34px; padding:0; border-radius:50%;
     background:rgba(0,0,0,.5); color:#fff; display:flex; align-items:center; justify-content:center; transition:transform .1s; }
   .hus .hjarta:hover { transform:scale(1.12); background:rgba(0,0,0,.6); }
@@ -281,7 +283,10 @@
         <div><label class="lbl" for="fKravNatur">Krav på natur i närheten</label>
           <select id="fKravNatur"><option value="något">Vatten eller skog inom maxavstånd</option><option value="båda">Både vatten och skog inom maxavstånd</option><option value="inget">Inget krav – visa bara avstånden</option></select>
         </div>
+        <div><label class="lbl" for="fAndraMalNamn">Andra pendlingsmål, namn (t.ex. "Kontoret")</label><input type="text" id="fAndraMalNamn" placeholder="lämna tomt för att inte visa"></div>
+        <div><label class="lbl" for="fAndraMalAdress">Andra pendlingsmål, adress</label><input type="text" id="fAndraMalAdress" placeholder="t.ex. Sveavägen 1, Stockholm"></div>
       </div>
+      <p class="hint">Bara informativt – visas som en extra restidsrad på husen, påverkar inte vilka hus som visas.</p>
       <div class="row" style="margin-top:20px"><button id="saveBtn">Spara inställningar</button><button class="ghost" id="reloadBtn">Ladda om</button></div>
       <div class="status" id="saveStatus"></div>
     </div>
@@ -301,7 +306,7 @@
 // servern (förbi cachen), läser numret ur den och laddar om sig själv en
 // gång om servern har en nyare version. Ingen separat hjälpfil att glömma
 // uppdatera – bara panelfilen själv avgör.
-const PANEL_VERSION = "21";
+const PANEL_VERSION = "22";
 (async () => {
   try {
     const r = await fetch(`bostadsvakt.html?t=${Date.now()}`, { cache: "no-store" });
@@ -507,12 +512,17 @@ function kortHtml(t, { dolj = false } = {}) {
   const prisJmfHtml = p
     ? `<div class="prisjmf">${p.husKvm.toLocaleString("sv-SE")} kr/m² · <span class="${p.diffProcent <= 0 ? "under" : "over"}">${Math.abs(p.diffProcent)}% ${p.diffProcent <= 0 ? "under" : "över"} snittet</span> (${p.antalJamforelser} sålda)</div>`
     : "";
+  const ps = t.prisSankning;
+  const prisSanktHtml = ps
+    ? `<div class="prissankt">↓ Sänkt från ${ps.fran.toLocaleString("sv-SE")} till ${ps.till.toLocaleString("sv-SE")} kr</div>`
+    : "";
   const anteckning = listor.anteckningar?.[t.id] ?? "";
   const anteckningOlastHtml = arAnteckningOlast(t.id, anteckning)
     ? '<div class="anteckning-ny">💬 Ny anteckning</div>' : "";
   const badges = [
     t.uppfyller ? '<span class="badge">Träff</span>' : '',
     t.kalla === "Hemnet Max" ? '<span class="badge tips">Hemnet-tips</span>' : '',
+    ps ? '<span class="badge sankt">Prissänkt</span>' : '',
   ].filter(Boolean).join('');
   return `<div class="hus${dold ? " ardold" : ""}">
     ${badges ? `<div class="badges">${badges}</div>` : ''}
@@ -524,6 +534,7 @@ function kortHtml(t, { dolj = false } = {}) {
       <div class="titel">${esc(t.typ || "Bostad")}${t.omrade ? " i " + esc(t.omrade) : ""}</div>
       <div class="adress">${esc(t.adress)}</div>
       <div class="fakta">${esc(fakta)}</div>
+      ${prisSanktHtml}
       ${prisJmfHtml}
       ${poangHtml}
       ${t.aiOmdome ? `<div class="omdome">${esc(t.aiOmdome)}</div>` : ""}
@@ -642,6 +653,8 @@ async function laddaConfig() {
   sattReglage("fSkog", "oSkog", k["maxAvståndSkogM"]);
   sattReglage("fGrannar", "oGrannar", k["maxGrannarInom300m"]);
   $("fKravNatur").value = k.kravNatur ?? (k.kravVattenEllerSkog === false ? "inget" : "något");
+  $("fAndraMalNamn").value = k.andraMal?.namn ?? "";
+  $("fAndraMalAdress").value = k.andraMal?.adress ?? "";
 }
 async function sparaConfig() {
   const btn = $("saveBtn"), st = $("saveStatus");
@@ -652,11 +665,13 @@ async function sparaConfig() {
     const tal = (id) => $(id).value.trim() === "" ? null : Number($(id).value);
     const searches = $("fOmraden").value.split(",").map(s => s.trim()).filter(Boolean).map(namn => ({ namn, q: namn }));
     if (searches.length === 0) throw new Error("ange minst ett sökområde");
+    const andraMalAdress = $("fAndraMalAdress").value.trim();
     const cfg = { searches, kriterier: {
         objectType: typer.join(","), maxPris: tal("fMaxPris"), minRum: tal("fMinRum"), minBoarea: tal("fMinBoarea"), minTomtarea: tal("fMinTomt"),
         "maxAvståndHållplatsM": Number($("fHallplats").value), maxRestidStockholmMin: tal("fRestid"),
         "maxAvståndVattenM": Number($("fVatten").value), "maxAvståndSkogM": Number($("fSkog").value),
         kravNatur: $("fKravNatur").value, "maxGrannarInom300m": Number($("fGrannar").value),
+        andraMal: andraMalAdress ? { namn: $("fAndraMalNamn").value.trim() || "Andra målet", adress: andraMalAdress } : null,
       }, notiser: { "endastTräffar": $("fNotislage").value === "traffar" } };
     await skrivFil("config.json", cfg, "Ändra inställningar via kontrollpanelen");
     st.textContent = "Sparat. Nästa körning använder de nya kriterierna."; st.className = "status ok";
