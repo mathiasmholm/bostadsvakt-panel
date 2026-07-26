@@ -105,6 +105,9 @@
   .hus .poang b { color:var(--text); font-variant-numeric:tabular-nums; }
   .hus .omdome { font-size:.83rem; font-style:italic; color:var(--text); opacity:.9; line-height:1.5;
     margin:2px 0 8px; padding-left:10px; border-left:2px solid var(--border); }
+  .hus .prisjmf { font-size:.78rem; color:var(--muted); margin:2px 0 6px; }
+  .hus .prisjmf .under { color:var(--ok); font-weight:600; }
+  .hus .prisjmf .over { color:var(--warn); font-weight:600; }
   .hus .hjarta { position:absolute; top:8px; right:8px; width:34px; height:34px; padding:0; border-radius:50%;
     background:rgba(0,0,0,.5); color:#fff; display:flex; align-items:center; justify-content:center; transition:transform .1s; }
   .hus .hjarta:hover { transform:scale(1.12); background:rgba(0,0,0,.6); }
@@ -284,7 +287,7 @@
 // servern (förbi cachen), läser numret ur den och laddar om sig själv en
 // gång om servern har en nyare version. Ingen separat hjälpfil att glömma
 // uppdatera – bara panelfilen själv avgör.
-const PANEL_VERSION = "19";
+const PANEL_VERSION = "20";
 (async () => {
   try {
     const r = await fetch(`bostadsvakt.html?t=${Date.now()}`, { cache: "no-store" });
@@ -459,6 +462,10 @@ function kortHtml(t, { dolj = false } = {}) {
   const poangHtml = t.poang != null
     ? `<div class="poang">Matchning <b>${t.poang}</b>/100 <span class="bar"><i style="width:${t.poang}%"></i></span></div>`
     : "";
+  const p = t.prisJmforelse;
+  const prisJmfHtml = p
+    ? `<div class="prisjmf">${p.husKvm.toLocaleString("sv-SE")} kr/m² · <span class="${p.diffProcent <= 0 ? "under" : "over"}">${Math.abs(p.diffProcent)}% ${p.diffProcent <= 0 ? "under" : "över"} snittet</span> (${p.antalJamforelser} sålda)</div>`
+    : "";
   const anteckning = listor.anteckningar?.[t.id] ?? "";
   const badges = [
     t.uppfyller ? '<span class="badge">Träff</span>' : '',
@@ -474,6 +481,7 @@ function kortHtml(t, { dolj = false } = {}) {
       <div class="titel">${esc(t.typ || "Bostad")}${t.omrade ? " i " + esc(t.omrade) : ""}</div>
       <div class="adress">${esc(t.adress)}</div>
       <div class="fakta">${esc(fakta)}</div>
+      ${prisJmfHtml}
       ${poangHtml}
       ${t.aiOmdome ? `<div class="omdome">${esc(t.aiOmdome)}</div>` : ""}
       <div class="detalj">${detaljer}</div>
