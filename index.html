@@ -4,28 +4,59 @@
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1">
 <title>Bostadsvakt</title>
-<link rel="icon" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24' fill='none' stroke='%230a84ff' stroke-width='2'%3E%3Cpath d='M3 10.5 12 3l9 7.5'/%3E%3Cpath d='M5 9.5V21h14V9.5'/%3E%3C/svg%3E">
+<link rel="icon" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24' fill='none' stroke='%2334d399' stroke-width='2'%3E%3Cpath d='M3 10.5 12 3l9 7.5'/%3E%3Cpath d='M5 9.5V21h14V9.5'/%3E%3C/svg%3E">
+<script>
+// Sätts innan CSS:en ens hunnit tolkas, annars flimrar sidan till fel tema
+// ett ögonblick vid varje laddning om man valt ett annat läge än systemets.
+// Samma mönster/nyckelnamnsform som Growarr, för enhetlig känsla mellan apparna.
+try {
+  var bostadsvaktTema = localStorage.getItem("bostadsvakt-tema");
+  if (bostadsvaktTema === "light" || bostadsvaktTema === "dark") document.documentElement.setAttribute("data-tema", bostadsvaktTema);
+} catch (e) { /* privat läge/blockerad localStorage – kör bara systemets tema */ }
+</script>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Outfit:wght@500;600;700;800&family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
 <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css" integrity="sha256-p4NxAoJBhIIN+hmNHrzRCf9tD/miZyoHS5obTRR9BMY=" crossorigin="">
 <style>
   :root {
-    --bg:#000000; --surface:rgba(28,28,30,.78); --surface-solid:#1c1c1e; --surface2:#2c2c2e;
-    --border:rgba(255,255,255,.1); --text:#f5f5f7; --muted:#98989d; --accent:#0a84ff; --accent-h:#3aa0ff;
-    --ok:#30d158; --warn:#ff9f0a; --err:#ff453a; --r:18px; --r-sm:12px;
-    --shadow:0 1px 2px rgba(0,0,0,.35), 0 10px 28px rgba(0,0,0,.45);
+    --bg:#080b09; --surface:#121a16; --surface2:#1a2420; --border:#233129;
+    --text:#eef7f1; --muted:#8fa398; --accent:#34d399; --accent2:#22c1c3; --accent-h:#4fe0b3;
+    --ok:#34d399; --warn:#fbbf24; --err:#f87171; --r:18px; --r-sm:12px;
+    --shadow:0 1px 2px rgba(0,0,0,.5), 0 16px 32px -14px rgba(0,0,0,.55);
+    --grad:linear-gradient(135deg, var(--accent), var(--accent2));
     --ease:cubic-bezier(.4,0,.2,1);
   }
   @media (prefers-color-scheme: light) {
-    :root { --bg:#f2f2f7; --surface:rgba(255,255,255,.78); --surface-solid:#ffffff; --surface2:#f2f2f7;
-      --border:rgba(60,60,67,.13); --text:#1c1c1e; --muted:#6e6e73; --accent:#007aff; --accent-h:#0066d6;
-      --shadow:0 1px 2px rgba(0,0,0,.04), 0 10px 28px rgba(0,0,0,.07); }
+    :root { --bg:#eef8f2; --surface:#ffffff; --surface2:#f2f9f4; --border:#dcece1;
+      --text:#132018; --muted:#5c7267;
+      --shadow:0 1px 2px rgba(20,50,40,.04), 0 16px 32px -16px rgba(20,50,40,.14); }
+  }
+  /* Manuellt valt tema (se Inställningar) väger tyngre än systemets, oavsett
+     vilket systemet råkar vara satt till – därav attributselektorn i stället
+     för ännu en media query. Samma mönster som Growarr. */
+  :root[data-tema="dark"] {
+    --bg:#080b09; --surface:#121a16; --surface2:#1a2420; --border:#233129;
+    --text:#eef7f1; --muted:#8fa398;
+    --shadow:0 1px 2px rgba(0,0,0,.5), 0 16px 32px -14px rgba(0,0,0,.55);
+  }
+  :root[data-tema="light"] {
+    --bg:#eef8f2; --surface:#ffffff; --surface2:#f2f9f4; --border:#dcece1;
+    --text:#132018; --muted:#5c7267;
+    --shadow:0 1px 2px rgba(20,50,40,.04), 0 16px 32px -16px rgba(20,50,40,.14);
   }
   * { box-sizing:border-box; margin:0; }
-  body { background:var(--bg); color:var(--text); -webkit-font-smoothing:antialiased;
-    font:15px/1.55 -apple-system,"SF Pro Text","Inter","Segoe UI",system-ui,sans-serif;
+  body { background:
+      radial-gradient(1200px 500px at 15% -10%, color-mix(in srgb, var(--accent) 12%, transparent), transparent),
+      radial-gradient(900px 500px at 100% 0%, color-mix(in srgb, var(--accent2) 10%, transparent), transparent),
+      var(--bg);
+    color:var(--text); -webkit-font-smoothing:antialiased;
+    font:15px/1.6 "Inter","Segoe UI",-apple-system,system-ui,sans-serif;
     min-height:100vh; padding-bottom:64px; letter-spacing:-.011em; }
+  h1, h2, h3, .pris, .brand, button, .tab { font-family:"Outfit","Inter",sans-serif; }
   .wrap { max-width:1400px; margin:0 auto; padding:0 20px; }
 
-  .topbar { background:var(--surface); backdrop-filter:saturate(180%) blur(20px); -webkit-backdrop-filter:saturate(180%) blur(20px);
+  .topbar { background:color-mix(in srgb, var(--surface) 80%, transparent); backdrop-filter:saturate(180%) blur(20px); -webkit-backdrop-filter:saturate(180%) blur(20px);
     border-bottom:.5px solid var(--border); position:sticky; top:0; z-index:5; }
   .topbar .wrap { display:flex; align-items:center; gap:12px; height:52px; }
   .brand { display:flex; align-items:center; gap:9px; font-weight:600; font-size:1rem; }
@@ -35,7 +66,7 @@
   .chip { font-size:.74rem; font-weight:500; color:var(--muted); background:var(--surface2); border:.5px solid var(--border);
     border-radius:980px; padding:4px 12px; white-space:nowrap; }
 
-  .tabs { background:var(--surface); backdrop-filter:saturate(180%) blur(20px); -webkit-backdrop-filter:saturate(180%) blur(20px);
+  .tabs { background:color-mix(in srgb, var(--surface) 80%, transparent); backdrop-filter:saturate(180%) blur(20px); -webkit-backdrop-filter:saturate(180%) blur(20px);
     border-bottom:.5px solid var(--border); position:sticky; top:52px; z-index:4; }
   .tabs .wrap { display:flex; gap:2px; padding:10px 20px; }
   .tab { appearance:none; border:0; background:none; color:var(--muted); font:inherit; font-weight:600;
@@ -45,7 +76,7 @@
   .tab.aktiv { color:#fff; background:var(--accent); }
   .tab .las { width:12px; height:12px; opacity:.7; }
 
-  .card { background:var(--surface-solid); border:.5px solid var(--border); border-radius:var(--r); padding:24px; margin-top:20px; box-shadow:var(--shadow); }
+  .card { background:var(--surface); border:.5px solid var(--border); border-radius:var(--r); padding:24px; margin-top:20px; box-shadow:var(--shadow); }
   .card > h2 { font-size:.76rem; font-weight:600; text-transform:uppercase; letter-spacing:.07em;
     color:var(--muted); margin-bottom:18px; display:flex; align-items:center; gap:8px; }
   .card > h2 svg { color:var(--accent); }
@@ -71,6 +102,14 @@
     background:var(--surface2); border:.5px solid var(--border); color:var(--muted); transition:all .2s var(--ease); }
   .chips input:checked + span { background:var(--accent); border-color:var(--accent); color:#fff; }
 
+  .vy-segment { display:inline-flex; padding:3px; border-radius:12px; background:var(--surface2);
+    border:.5px solid var(--border); }
+  .vy-segment-btn { background:none; border:0; box-shadow:none; color:var(--muted); font:inherit;
+    font-weight:600; font-size:.85rem; padding:7px 14px; border-radius:9px; cursor:pointer;
+    transition:background .2s var(--ease), color .2s var(--ease); }
+  .vy-segment-btn:hover { color:var(--text); }
+  .vy-segment-btn.aktiv { background:var(--surface); color:var(--text); box-shadow:0 2px 6px rgba(0,0,0,.28); }
+
   button { border:0; border-radius:980px; padding:10px 20px; font-size:.9rem; font-weight:600;
     font-family:inherit; cursor:pointer; background:var(--accent); color:#fff; transition:background .2s var(--ease), transform .1s var(--ease); }
   button:hover { background:var(--accent-h); }
@@ -90,7 +129,7 @@
       -webkit-overflow-scrolling:touch; margin:20px -20px 0; padding:0 20px 10px; }
     .galleri .hus { flex:0 0 100%; scroll-snap-align:center; }
   }
-  .hus { background:var(--surface-solid); border:.5px solid var(--border); border-radius:var(--r); overflow:hidden;
+  .hus { background:var(--surface); border:.5px solid var(--border); border-radius:var(--r); overflow:hidden;
     display:flex; flex-direction:column; position:relative; box-shadow:var(--shadow);
     transition:transform .25s var(--ease); }
   .hus:hover { transform:translateY(-3px); }
@@ -113,7 +152,7 @@
   .hus .badge.sankt { background:rgba(255,255,255,.92); color:var(--ok); border:.5px solid var(--ok); }
   .hus .poang { display:inline-flex; align-items:center; gap:6px; font-size:.78rem; color:var(--muted); margin:2px 0 6px; }
   .hus .poang .bar { width:60px; height:5px; border-radius:99px; background:var(--surface2); overflow:hidden; flex-shrink:0; }
-  .hus .poang .bar i { display:block; height:100%; border-radius:99px; background:linear-gradient(90deg,#ff453a,#ff9f0a,#30d158); }
+  .hus .poang .bar i { display:block; height:100%; border-radius:99px; background:linear-gradient(90deg,#f87171,#fbbf24,#34d399); }
   .hus .poang b { color:var(--text); font-variant-numeric:tabular-nums; }
   .hus .omdome { font-size:.83rem; font-style:italic; color:var(--text); opacity:.85; line-height:1.5;
     margin:2px 0 8px; padding-left:10px; border-left:2px solid var(--border); }
@@ -232,6 +271,17 @@
 
 <!-- Flik: Inställningar (låst) -->
 <div class="wrap tabpanel hidden" data-panel="installningar">
+
+  <!-- Utseende (behöver ingen inloggning) -->
+  <div class="card">
+    <h2>Utseende</h2>
+    <p class="lbl" style="margin-bottom:12px">Följer enhetens ljusa/mörka läge som standard – välj annars själv.</p>
+    <div class="vy-segment" id="temaSegment" style="max-width:320px">
+      <button class="vy-segment-btn" data-tema="system">System</button>
+      <button class="vy-segment-btn" data-tema="light">Ljust</button>
+      <button class="vy-segment-btn" data-tema="dark">Mörkt</button>
+    </div>
+  </div>
 
   <!-- Inloggning -->
   <div id="loginCard" class="card">
@@ -611,7 +661,7 @@ async function visaKarta(hus) {
   kartaMarkorer = [];
   const punkter = hus.filter((t) => t.lat != null && t.lon != null);
   for (const t of punkter) {
-    const farg = t.uppfyller ? "#30d158" : "#0a84ff";
+    const farg = t.uppfyller ? "#34d399" : "#22c1c3";
     const ikon = L.divIcon({
       className: "", html: `<div style="width:14px;height:14px;border-radius:50%;background:${farg};border:2px solid #fff;box-shadow:0 0 0 1px rgba(0,0,0,.3)"></div>`,
       iconSize: [14, 14], iconAnchor: [7, 7],
@@ -752,6 +802,25 @@ $("saveBtn").addEventListener("click", sparaConfig);
 $("reloadBtn").addEventListener("click", async () => { await laddaConfig(); $("saveStatus").textContent = "Omläst från GitHub."; $("saveStatus").className = "status ok"; });
 $("testBtn").addEventListener("click", () => korWorkflow("test.yml", "testBtn", "Testnotis på väg – kolla mobilen om cirka 30 sekunder."));
 $("runBtn").addEventListener("click", () => korWorkflow("bostadsvakt.yml", "runBtn", "Bevakningen startad – följ den under Kör."));
+
+// ---- Tema: system/ljust/mörkt, sparat lokalt (samma enhet, inte per konto) ----
+// localStorage kan kasta i privat läge/med blockerad lagring i vissa
+// webbläsare – ett kastat fel här skulle annars stoppa resten av scriptet.
+const TEMA_NYCKEL = "bostadsvakt-tema";
+function lasTema() { try { return localStorage.getItem(TEMA_NYCKEL); } catch { return null; } }
+function sparaTema(val) { try { localStorage.setItem(TEMA_NYCKEL, val); } catch { /* strunta i det, gäller bara den här sessionen då */ } }
+function tillampaTema(val) {
+  if (val === "light" || val === "dark") document.documentElement.setAttribute("data-tema", val);
+  else document.documentElement.removeAttribute("data-tema");
+  for (const b of $("temaSegment").children) b.classList.toggle("aktiv", b.dataset.tema === val);
+}
+tillampaTema(lasTema() ?? "system");
+$("temaSegment").addEventListener("click", (e) => {
+  const btn = e.target.closest(".vy-segment-btn");
+  if (!btn) return;
+  sparaTema(btn.dataset.tema);
+  tillampaTema(btn.dataset.tema);
+});
 
 // Start: visa Bostäder direkt (ingen inloggning krävs)
 uppdateraInloggUI();
