@@ -74,7 +74,6 @@ try {
     transition:background .2s var(--ease), color .2s var(--ease); }
   .tab:hover { color:var(--text); background:var(--surface2); }
   .tab.aktiv { color:#fff; background:var(--accent); }
-  .tab .las { width:12px; height:12px; opacity:.7; }
 
   .card { background:var(--surface); border:.5px solid var(--border); border-radius:var(--r); padding:24px; margin-top:20px; box-shadow:var(--shadow); }
   .card > h2 { font-size:.76rem; font-weight:600; text-transform:uppercase; letter-spacing:.07em;
@@ -203,7 +202,6 @@ try {
   <g id="i-pin"><path d="M12 21s-7-5.5-7-11a7 7 0 0 1 14 0c0 5.5-7 11-7 11Z" fill="none" stroke="currentColor" stroke-width="2"/><circle cx="12" cy="10" r="2.5" fill="none" stroke="currentColor" stroke-width="2"/></g>
   <g id="i-play"><path d="M7 4.5v15l12-7.5Z" fill="none" stroke="currentColor" stroke-width="2" stroke-linejoin="round"/></g>
   <g id="i-clock"><circle cx="12" cy="12" r="8.5" fill="none" stroke="currentColor" stroke-width="2"/><path d="M12 7.5V12l3 2" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"/></g>
-  <g id="i-lock"><rect x="5" y="11" width="14" height="9" rx="2" fill="none" stroke="currentColor" stroke-width="2"/><path d="M8 11V8a4 4 0 0 1 8 0v3" fill="none" stroke="currentColor" stroke-width="2"/></g>
   <g id="i-plus"><path d="M12 5v14M5 12h14" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"/></g>
   <g id="i-heart"><path d="M12 20s-7-4.5-9.2-9C1.3 8.1 2.6 5 5.7 5c1.9 0 3.2 1.1 4.3 2.6C11.1 6.1 12.4 5 14.3 5c3.1 0 4.4 3.1 2.9 6-2.2 4.5-9.2 9-9.2 9Z" stroke="currentColor" stroke-width="2" stroke-linejoin="round"/></g>
 </defs></svg>
@@ -214,15 +212,13 @@ try {
     <div>Bostadsvakt<small>Husbevakning</small></div>
   </div>
   <div class="spacer"></div>
-  <span class="chip hidden" id="repoPill">matthewholm/bostadsvakt</span>
-  <button class="ghost hidden" id="logoutBtn" style="padding:6px 14px;font-size:.8rem">Logga ut</button>
+  <span class="chip" id="repoPill">matthewholm/bostadsvakt</span>
 </div></div>
 
 <div class="tabs"><div class="wrap">
   <button class="tab aktiv" data-tab="bostader">Bostäder</button>
   <button class="tab" data-tab="sparade">Sparade <span id="sparadeRakn"></span></button>
-  <button class="tab" data-tab="installningar">Inställningar
-    <svg class="las" viewBox="0 0 24 24"><use href="#i-lock"/></svg></button>
+  <button class="tab" data-tab="installningar">Inställningar</button>
 </div></div>
 
 <!-- Flik: Bostäder (öppen) -->
@@ -269,10 +265,10 @@ try {
   </div>
 </div>
 
-<!-- Flik: Inställningar (låst) -->
+<!-- Flik: Inställningar -->
 <div class="wrap tabpanel hidden" data-panel="installningar">
 
-  <!-- Utseende (behöver ingen inloggning) -->
+  <!-- Utseende -->
   <div class="card">
     <h2>Utseende</h2>
     <p class="lbl" style="margin-bottom:12px">Följer enhetens ljusa/mörka läge som standard – välj annars själv.</p>
@@ -283,27 +279,7 @@ try {
     </div>
   </div>
 
-  <!-- Inloggning -->
-  <div id="loginCard" class="card">
-    <h2><svg width="16" height="16" viewBox="0 0 24 24"><use href="#i-lock"/></svg> Logga in för att ändra</h2>
-    <p style="font-size:.88rem; color:var(--muted); margin-bottom:16px">Att ändra sökkriterier eller köra bevakningen manuellt skriver till GitHub och kräver en personlig token. Den sparas bara i den här webbläsaren. Att gilla, dölja och skriva anteckningar kräver ingen inloggning.</p>
-    <label class="lbl" for="tokenInput">GitHub-token</label>
-    <input type="password" id="tokenInput" placeholder="github_pat_…" autocomplete="off">
-    <div class="row" style="margin-top:14px"><button id="loginBtn">Logga in</button></div>
-    <div class="status" id="loginStatus"></div>
-    <details>
-      <summary>Hur skapar jag en token?</summary>
-      <ol class="steps">
-        <li>GitHub → <strong>Settings</strong> → <strong>Developer settings</strong> → <strong>Fine-grained tokens</strong> → <em>Generate new token</em></li>
-        <li>Repository access: <strong>Only select repositories</strong> → <code>bostadsvakt</code></li>
-        <li>Permissions: <strong>Contents</strong> och <strong>Actions</strong>, båda <em>Read and write</em></li>
-        <li>Sätt gärna giltighet 1 år. Generera, kopiera och klistra in här</li>
-      </ol>
-    </details>
-  </div>
-
-  <!-- Inloggat innehåll -->
-  <div id="adminInnehall" class="hidden">
+  <div id="adminInnehall">
     <div class="card">
       <h2><svg width="16" height="16" viewBox="0 0 24 24"><use href="#i-search"/></svg> Bevakning</h2>
       <div class="grid">
@@ -367,7 +343,7 @@ try {
 // servern (förbi cachen), läser numret ur den och laddar om sig själv en
 // gång om servern har en nyare version. Ingen separat hjälpfil att glömma
 // uppdatera – bara panelfilen själv avgör.
-const PANEL_VERSION = "22";
+const PANEL_VERSION = "23";
 (async () => {
   try {
     const r = await fetch(`bostadsvakt.html?t=${Date.now()}`, { cache: "no-store" });
@@ -382,36 +358,13 @@ const PANEL_VERSION = "22";
 })();
 
 const OWNER = "matthewholm", REPO = "bostadsvakt";
-const API = `https://api.github.com/repos/${OWNER}/${REPO}`;
 const LISTOR_API = "/bostadsvakt-api"; // liten lokal tjänst hos er, se bostadsvakt-api-repot
 const LOKAL_TRAFFAR = "bostadsvakt-traffar.json"; // hämtas till HA:s www av server-jobbet
-let token = localStorage.getItem("bv_token") || "";
 let runsTimer = null;
 
 const $ = (id) => document.getElementById(id);
-const hdrs = () => ({ Authorization: `Bearer ${token}`, Accept: "application/vnd.github+json" });
-const b64decode = (s) => new TextDecoder().decode(Uint8Array.from(atob(s.replace(/\n/g, "")), c => c.charCodeAt(0)));
-const b64encode = (s) => btoa(String.fromCharCode(...new TextEncoder().encode(s)));
 const meter = (n) => n >= 1000 ? (n / 1000).toLocaleString("sv-SE", { maximumFractionDigits: 2 }) + " km" : n + " m";
 const esc = (s) => String(s ?? "").replace(/[&<>"]/g, c => ({ "&":"&amp;","<":"&lt;",">":"&gt;",'"':"&quot;" }[c]));
-const inloggad = () => Boolean(token);
-
-async function hamtaFil(path) {
-  const res = await fetch(`${API}/contents/${path}?ref=main`, { headers: hdrs(), cache: "no-store" });
-  if (res.status === 404) return { sha: null, json: null };
-  if (!res.ok) throw new Error(`GitHub svarade ${res.status}`);
-  const data = await res.json();
-  return { sha: data.sha, json: JSON.parse(b64decode(data.content)) };
-}
-async function skrivFil(path, obj, message, forsokKvar = 1) {
-  const { sha } = await hamtaFil(path);
-  const res = await fetch(`${API}/contents/${path}`, {
-    method: "PUT", headers: hdrs(),
-    body: JSON.stringify({ message, content: b64encode(JSON.stringify(obj, null, 2) + "\n"), sha: sha ?? undefined, branch: "main" }),
-  });
-  if (res.status === 409 && forsokKvar > 0) return skrivFil(path, obj, message, forsokKvar - 1);
-  if (!res.ok) throw new Error(`GitHub svarade ${res.status}`);
-}
 
 // ---- Flikar ----
 for (const tab of document.querySelectorAll(".tab")) {
@@ -420,7 +373,7 @@ for (const tab of document.querySelectorAll(".tab")) {
     document.querySelectorAll(".tabpanel").forEach(p => p.classList.toggle("hidden", p.dataset.panel !== tab.dataset.tab));
     if (tab.dataset.tab === "bostader") laddaTraffar();
     if (tab.dataset.tab === "sparade") laddaListor().then(renderaSparade);
-    if (tab.dataset.tab === "installningar" && inloggad()) laddaKorningar();
+    if (tab.dataset.tab === "installningar") laddaKorningar();
   });
 }
 
@@ -510,10 +463,7 @@ async function sparaAnteckning(id, text, statusEl) {
 async function laddaTraffar() {
   await laddaListor();
   let lista = null;
-  if (inloggad()) { try { lista = (await hamtaFil("data/traffar.json")).json ?? []; } catch {} }
-  if (lista === null) {
-    try { const r = await fetch(`${LOKAL_TRAFFAR}?t=${Date.now()}`, { cache: "no-store" }); if (r.ok) lista = await r.json(); } catch {}
-  }
+  try { const r = await fetch(`${LOKAL_TRAFFAR}?t=${Date.now()}`, { cache: "no-store" }); if (r.ok) lista = await r.json(); } catch {}
   if (lista === null) {
     $("traffInfo").textContent = "Kunde inte hämta bostäder.";
     $("galleri").innerHTML = ""; $("tomtLage").classList.add("hidden");
@@ -700,7 +650,10 @@ function sattReglage(id, out, varde) {
   $(out).textContent = out === "oGrannar" ? String(el.value) : meter(Number(el.value));
 }
 async function laddaConfig() {
-  const { json: cfg } = await hamtaFil("config.json");
+  const res = await fetch(`${LISTOR_API}/config`, { cache: "no-store" });
+  if (res.status === 501) throw new Error("GITHUB_TOKEN är inte konfigurerad på bostadsvakt-api");
+  if (!res.ok) throw new Error(`bostadsvakt-api svarade ${res.status}`);
+  const cfg = await res.json();
   const k = cfg.kriterier;
   $("fOmraden").value = cfg.searches.map(s => s.namn).join(", ");
   $("fMaxPris").value = k.maxPris ?? "";
@@ -734,7 +687,11 @@ async function sparaConfig() {
         kravNatur: $("fKravNatur").value, "maxGrannarInom300m": Number($("fGrannar").value),
         andraMal: andraMalAdress ? { namn: $("fAndraMalNamn").value.trim() || "Andra målet", adress: andraMalAdress } : null,
       }, notiser: { "endastTräffar": $("fNotislage").value === "traffar" } };
-    await skrivFil("config.json", cfg, "Ändra inställningar via kontrollpanelen");
+    const sparaRes = await fetch(`${LISTOR_API}/config`, {
+      method: "POST", headers: { "Content-Type": "application/json" }, body: JSON.stringify(cfg),
+    });
+    if (sparaRes.status === 501) throw new Error("GITHUB_TOKEN är inte konfigurerad på bostadsvakt-api");
+    if (!sparaRes.ok) throw new Error(`bostadsvakt-api svarade ${sparaRes.status}`);
     st.textContent = "Sparat. Nästa körning använder de nya kriterierna."; st.className = "status ok";
   } catch (e) { st.textContent = "Kunde inte spara: " + e.message; st.className = "status err"; }
   finally { btn.disabled = false; }
@@ -745,16 +702,19 @@ async function korWorkflow(fil, knappId, text, inputs, statusId = "runStatus") {
   const btn = $(knappId), st = $(statusId);
   btn.disabled = true; st.textContent = "Startar …"; st.className = "status";
   try {
-    const res = await fetch(`${API}/actions/workflows/${fil}/dispatches`, {
-      method: "POST", headers: hdrs(), body: JSON.stringify({ ref: "main", ...(inputs && { inputs }) }) });
-    if (res.status !== 204) throw new Error(`GitHub svarade ${res.status}`);
+    const res = await fetch(`${LISTOR_API}/run`, {
+      method: "POST", headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ workflow: fil, ...(inputs && { inputs }) }),
+    });
+    if (res.status === 501) throw new Error("GITHUB_TOKEN är inte konfigurerad på bostadsvakt-api");
+    if (!res.ok) throw new Error(`bostadsvakt-api svarade ${res.status}`);
     st.textContent = text; st.className = "status ok";
   } catch (e) { st.textContent = "Gick inte att starta: " + e.message; st.className = "status err"; }
   finally { btn.disabled = false; }
 }
 async function laddaKorningar() {
   try {
-    const res = await fetch(`${API}/actions/runs?per_page=6`, { headers: hdrs(), cache: "no-store" });
+    const res = await fetch(`${LISTOR_API}/runs`, { cache: "no-store" });
     if (!res.ok) return;
     const data = await res.json();
     const farg = (r) => r.status !== "completed" ? "var(--warn)" : r.conclusion === "success" ? "var(--ok)" : "var(--err)";
@@ -763,34 +723,11 @@ async function laddaKorningar() {
   } catch {}
 }
 
-// ---- Inloggning ----
-function uppdateraInloggUI() {
-  $("loginCard").classList.toggle("hidden", inloggad());
-  $("adminInnehall").classList.toggle("hidden", !inloggad());
-  $("logoutBtn").classList.toggle("hidden", !inloggad());
-  $("repoPill").classList.toggle("hidden", !inloggad());
-  $("actionsLink").href = `https://github.com/${OWNER}/${REPO}/actions`;
-}
-async function loggaIn() {
-  const st = $("loginStatus");
-  st.textContent = "Kontrollerar …"; st.className = "status";
-  try {
-    await laddaConfig();
-    localStorage.setItem("bv_token", token);
-    uppdateraInloggUI();
-    laddaKorningar();
-    laddaTraffar();
-    clearInterval(runsTimer);
-    runsTimer = setInterval(() => { if (inloggad() && !$("adminInnehall").classList.contains("hidden")) laddaKorningar(); }, 30000);
-  } catch (e) {
-    token = "";
-    st.textContent = "Token fungerar inte (" + e.message + "). Kontrollera behörigheterna: Contents och Actions, read/write.";
-    st.className = "status err"; uppdateraInloggUI();
-  }
-}
-$("loginBtn").addEventListener("click", () => { token = $("tokenInput").value.trim(); if (token) loggaIn(); });
-$("tokenInput").addEventListener("keydown", e => { if (e.key === "Enter") $("loginBtn").click(); });
-$("logoutBtn").addEventListener("click", () => { localStorage.removeItem("bv_token"); token = ""; clearInterval(runsTimer); $("tokenInput").value = ""; uppdateraInloggUI(); laddaTraffar(); });
+$("actionsLink").href = `https://github.com/${OWNER}/${REPO}/actions`;
+laddaConfig().catch((e) => {
+  $("saveStatus").textContent = "Kunde inte läsa inställningarna: " + e.message; $("saveStatus").className = "status err";
+});
+runsTimer = setInterval(() => { if (!document.querySelector(".tabpanel[data-panel=installningar]").classList.contains("hidden")) laddaKorningar(); }, 30000);
 $("uppdateraBtn").addEventListener("click", async () => {
   const b = $("uppdateraBtn");
   b.disabled = true; b.textContent = "Uppdaterar …";
@@ -822,10 +759,8 @@ $("temaSegment").addEventListener("click", (e) => {
   tillampaTema(btn.dataset.tema);
 });
 
-// Start: visa Bostäder direkt (ingen inloggning krävs)
-uppdateraInloggUI();
+// Start
 uppdateraSparadeRakn();
-if (inloggad()) loggaIn();
 laddaTraffar();
 </script>
 </body>
