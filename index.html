@@ -19,7 +19,7 @@
   * { box-sizing:border-box; margin:0; }
   body { background:var(--bg); color:var(--text); -webkit-font-smoothing:antialiased;
     font:15px/1.55 "Inter","Segoe UI",system-ui,-apple-system,sans-serif; min-height:100vh; padding-bottom:64px; }
-  .wrap { max-width:860px; margin:0 auto; padding:0 20px; }
+  .wrap { max-width:1400px; margin:0 auto; padding:0 20px; }
 
   .topbar { border-bottom:1px solid var(--border); background:var(--surface); position:sticky; top:0; z-index:5; }
   .topbar .wrap { display:flex; align-items:center; gap:12px; height:60px; }
@@ -164,7 +164,7 @@
     <div>Bostadsvakt<small>Husbevakning</small></div>
   </div>
   <div class="spacer"></div>
-  <span class="chip hidden" id="repoPill">mathiasmholm/bostadsvakt</span>
+  <span class="chip hidden" id="repoPill">matthewholm/bostadsvakt</span>
   <button class="ghost hidden" id="logoutBtn" style="padding:6px 14px;font-size:.8rem">Logga ut</button>
 </div></div>
 
@@ -320,7 +320,7 @@ const PANEL_VERSION = "22";
   } catch {}
 })();
 
-const OWNER = "mathiasmholm", REPO = "bostadsvakt";
+const OWNER = "matthewholm", REPO = "bostadsvakt";
 const API = `https://api.github.com/repos/${OWNER}/${REPO}`;
 const LISTOR_API = "/bostadsvakt-api"; // liten lokal tjänst hos er, se bostadsvakt-api-repot
 const LOKAL_TRAFFAR = "bostadsvakt-traffar.json"; // hämtas till HA:s www av server-jobbet
